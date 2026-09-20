@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1B2D">
+<title>毎朝ランキング</title>
+<style>
+:root{
+  --bg:#0F1B2D;      /* 深い紺色（背景） */
+  --panel:#182B47;   /* 少し明るい紺色（切り替えボタンの土台・詳細の台紙） */
+  --line:#22344F;    /* 区切りの線・点数の棒の土台 */
+  --ink:#E9EFF8;     /* ふつうの文字 */
+  --mute:#93A5BE;    /* 補足の文字 */
+  --dim:#5F7595;     /* 4位以下の順位の数字 */
+  --amber:#F5B942;   /* 目立たせる色（点数・選択中・上位3位・もっと見る） */
+  --up:#FF8078;      /* 上がり（▲） */
+  --down:#86B8FF;    /* 下がり（▼） */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Noto Sans JP","Meiryo",sans-serif;
+  font-size:16px;line-height:1.6;
+}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:-3px}
+
+.app{max-width:480px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom))}
+
+/* ---- 上の部分 ---- */
+.head{padding:0 20px}
+.app-name{font-size:24px;font-weight:800;line-height:1.3}
+.updated{font-size:14px;color:var(--mute);margin-top:2px}
+
+/* ---- お知らせ（見本・更新失敗） ---- */
+.notice{margin:14px 20px 0;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:700;line-height:1.5}
+.notice.sample{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.notice.fail{background:#3A2029;color:var(--up);border:1px solid #6A3340}
+
+/* ---- 切り替えボタン ---- */
+.tabs{display:flex;gap:4px;margin:18px 20px 0;padding:4px;background:var(--panel);border-radius:14px}
+.tab{flex:1;font-size:17px;font-weight:700;padding:14px 8px;border:0;border-radius:10px;background:none;color:var(--mute);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--amber);color:var(--bg)}
+.tab:focus-visible{outline-offset:2px}
+
+.lead{padding:0 20px;margin-top:16px;font-size:14px;line-height:1.7;color:var(--mute)}
+
+/* ---- ランキング一覧 ---- */
+.list{list-style:none;margin-top:8px}
+.item{position:relative;border-bottom:1px solid var(--line)}
+.item.top::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--amber)}
+.row{
+  display:grid;grid-template-columns:auto 1fr auto;
+  grid-template-areas:"rank who score" "gauge gauge gauge" "facts facts facts";
+  column-gap:14px;align-items:center;
+  width:100%;text-align:left;background:none;border:0;cursor:pointer;
+  padding:18px 20px 20px;
+}
+.row:active{background:rgba(24,43,71,.7)}
+@media (hover:hover){.row:hover{background:rgba(24,43,71,.55)}}
+.rank{grid-area:rank;font-size:30px;font-weight:700;color:var(--dim);min-width:1.4ch;font-variant-numeric:tabular-nums}
+.item.top .rank{color:var(--ink)}
+.who{grid-area:who;min-width:0}
+.name{font-size:18px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.code{font-size:13px;color:var(--mute);margin-top:2px}
+.score{grid-area:score;text-align:right;white-space:nowrap;color:var(--amber)}
+.num{font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.unit{font-size:14px;font-weight:700;margin-left:2px}
+.gauge{grid-area:gauge;height:6px;border-radius:99px;overflow:hidden;background:var(--line);margin-top:14px}
+.gauge i{display:block;height:100%;border-radius:inherit;background:var(--amber)}
+.facts{grid-area:facts;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.facts dt{font-size:12.5px;line-height:1.4;color:var(--mute)}
+.facts dd{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.facts small{font-size:12.5px;font-weight:500}
+.up{color:var(--up)}
+.down{color:var(--down)}
+.flat{color:var(--ink)}
+.none{font-size:14px;font-weight:500;color:var(--mute)}
+
+.count{padding:0 20px;margin-top:14px;font-size:13.5px;color:var(--mute);text-align:center}
+.empty{padding:28px 20px;text-align:center;color:var(--mute);font-size:16px}
+.more{
+  display:block;width:calc(100% - 40px);margin:16px 20px 0;padding:16px;
+  font-size:17px;font-weight:700;cursor:pointer;
+  background:transparent;color:var(--amber);border:1.5px solid var(--amber);border-radius:12px;
+}
+.more[hidden]{display:none}
+.note{padding:0 20px;margin-top:18px;font-size:13.5px;color:var(--mute);text-align:center}
+
+/* ---- 株の詳細 ---- */
+.sheet{position:fixed;top:0;right:0;bottom:0;left:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.scrim{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(4,9,18,.72)}
+.panel{
+  position:relative;width:100%;max-width:480px;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;
+  background:var(--panel);border-radius:22px 22px 0 0;border-top:1px solid var(--line);
+  padding:18px 20px calc(24px + env(safe-area-inset-bottom));
+  animation:rise .22s ease-out;
+}
+.panel:focus{outline:none}
+@keyframes rise{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.panel{animation:none}}
+.panel-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.d-rankline{font-size:14px;color:var(--mute)}
+.close{
+  min-height:48px;padding:0 22px;font-size:17px;font-weight:700;cursor:pointer;
+  background:transparent;color:var(--amber);border:1.5px solid var(--amber);border-radius:12px;
+}
+.d-name{font-size:22px;font-weight:800;line-height:1.35;margin-top:8px;overflow-wrap:anywhere}
+.d-code{font-size:13px;color:var(--mute)}
+.d-score{margin-top:14px;color:var(--amber)}
+.d-score .num{font-size:40px}
+.panel .gauge{margin-top:10px;background:var(--line)}
+.metrics{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:8px;margin-top:20px}
+.metric{padding:12px 10px;background:var(--bg);border-radius:12px}
+.m-label{font-size:12.5px;line-height:1.4;color:var(--mute)}
+.m-val{font-size:18px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.m-val small{font-size:12.5px;font-weight:500}
+.m-pos{font-size:13px;color:var(--mute);margin-top:4px;line-height:1.4}
+.why-title{font-size:16px;font-weight:700;margin-top:22px}
+.why{list-style:none;margin-top:8px}
+.why li{font-size:15px;line-height:1.7;padding:8px 0;border-top:1px solid var(--line)}
+.panel .note{padding:0;margin-top:16px;text-align:left}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="head">
+    <h1 class="app-name">毎朝ランキング</h1>
+    <p class="updated" id="updated"></p>
+  </header>
+
+  <div id="notices"></div>
+
+  <div class="tabs" role="tablist" aria-label="対象の株">
+    <button class="tab" type="button" role="tab" id="tab-jp" data-market="jp" aria-selected="true" aria-controls="list">日本株</button>
+    <button class="tab" type="button" role="tab" id="tab-us" data-market="us" aria-selected="false" aria-controls="list">アメリカ株</button>
+  </div>
+
+  <p class="lead">1〜3か月先に上がりそうな順<br>株をタップすると、理由の数字が見られます</p>
+
+  <ol class="list" id="list"></ol>
+  <p class="count" id="count"></p>
+  <button class="more" id="more" type="button">もっと見る</button>
+  <p class="note" id="note">上がる保証ではありません。判断材料です</p>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="scrim" id="scrim"></div>
+  <section class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="d-name" tabindex="-1">
+    <div class="panel-top">
+      <div class="d-rankline" id="d-rankline"></div>
+      <button class="close" id="close" type="button">閉じる</button>
+    </div>
+    <h2 class="d-name" id="d-name"></h2>
+    <div class="d-code" id="d-code"></div>
+    <div class="d-score"><span class="num" id="d-num"></span><span class="unit">点</span></div>
+    <div class="gauge" aria-hidden="true"><i id="d-gauge"></i></div>
+    <div class="metrics" id="d-metrics"></div>
+    <h3 class="why-title">なぜ上がりそうか</h3>
+    <ul class="why" id="d-why"></ul>
+    <p class="note">上がる保証ではありません。判断材料です</p>
+  </section>
+</div>
+
+<!-- ▼▼ ここから下の「株の数字のかたまり」だけが、毎朝入れ替わります ▼▼ -->
+<script id="ranking-data" type="application/json">
+{
+ "isSample": true,
+ "updatedAt": "2026-09-18T06:30:00+09:00",
+ "markets": {
+  "jp": {
+   "label": "日本株",
+   "codeLabel": "コード",
+   "stocks": [
+    {
+     "name": "サンプル運輸",
+     "code": "1006",
+     "score": 88,
+     "growth": 24.5,
+     "rating": 4.6,
+     "momentum": 7.3
+    },
+    {
+     "name": "ダミー電機",
+     "code": "1033",
+     "score": 80,
+     "growth": 19.5,
+     "rating": 3.9,
+     "momentum": 30.7
+    },
+    {
+     "name": "仮名ソフトウェア",
+     "code": "1026",
+     "score": 79,
+     "growth": 17.8,
+     "rating": 4.3,
+     "momentum": 4.9
+    },
+    {
+     "name": "サンプル製薬",
+     "code": "1005",
+     "score": 77,
+     "growth": 12.6,
+     "rating": 4.2,
+     "momentum": 11.1
+    },
+    {
+     "name": "デモ建設",
+     "code": "1024",
+     "score": 77,
+     "growth": 13.6,
+     "rating": 4.1,
+     "momentum": 13.1
+    },
+    {
+     "name": "見本精密工業",
+     "code": "1011",
+     "score": 72,
+     "growth": 14.0,
+     "rating": 4.1,
+     "momentum": 6.6
+    },
+    {
+     "name": "デモ運輸",
+     "code": "1022",
+     "score": 72,
+     "growth": 11.1,
+     "rating": null,
+     "momentum": 10.3
+    },
+    {
+     "name": "見本電機",
+     "code": "1009",
+     "score": 68,
+     "growth": 26.6,
+     "rating": 4.2,
+     "momentum": -1.5
+    },
+    {
+     "name": "ダミー運輸",
+     "code": "1038",
+     "score": 67,
+     "growth": 30.1,
+     "rating": 4.0,
+     "momentum": -0.9
+    },
+    {
+     "name": "ダミー精密工業",
+     "code": "1035",
+     "score": 64,
+     "growth": -1.7,
+     "rating": 4.6,
+     "momentum": 7.6
+    },
+    {
+     "name": "テスト化学",
+     "code": "1055",
+     "score": 64,
+     "growth": 14.8,
+     "rating": 4.2,
+     "momentum": -0.4
+    },
+    {
+     "name": "サンプル化学",
+     "code": "1007",
+     "score": 62,
+     "growth": 19.6,
+     "rating": 4.1,
+     "momentum": -2.2
+    },
+    {
+     "name": "見本ソフトウェア",
+     "code": "1010",
+     "score": 62,
+     "growth": 5.8,
+     "rating": 5.0,
+     "momentum": 0.4
+    },
+    {
+     "name": "テスト製薬",
+     "code": "1053",
+     "score": 62,
+     "growth": 0.8,
+     "rating": 4.1,
+     "momentum": 13.2
+    },
+    {
+     "name": "見本運輸",
+     "code": "1014",
+     "score": 60,
+     "growth": 22.2,
+     "rating": 3.2,
+     "momentum": 6.9
+    },
+    {
+     "name": "サンプル建設",
+     "code": "1008",
+     "score": 59,
+     "growth": 14.7,
+     "rating": 3.8,
+     "momentum": 0.7
+    },
+    {
+     "name": "デモ化学",
+     "code": "1023",
+     "score": 59,
+     "growth": -7.1,
+     "rating": 4.3,
+     "momentum": 10.1
+    },
+    {
+     "name": "模擬フーズ",
+     "code": "1060",
+     "score": 59,
+     "growth": 2.2,
+     "rating": 4.3,
+     "momentum": 3.7
+    },
+    {
+     "name": "仮名化学",
+     "code": "1031",
+     "score": 58,
+     "growth": 13.9,
+     "rating": 3.7,
+     "momentum": 2.9
+    },
+    {
+     "name": "模擬電機",
+     "code": "1057",
+     "score": 58,
+     "growth": -0.8,
+     "rating": 4.4,
+     "momentum": 4.2
+    },
+    {
+     "name": "仮名製薬",
+     "code": "1029",
+     "score": 57,
+     "growth": 17.2,
+     "rating": null,
+     "momentum": -1.4
+    },
+    {
+     "name": "模擬ソフトウェア",
+     "code": "1058",
+     "score": 57,
+     "growth": 9.4,
+     "rating": 3.4,
+     "momentum": 13.4
+    },
+    {
+     "name": "サンプルソフトウェア",
+     "code": "1002",
+     "score": 56,
+     "growth": 1.2,
+     "rating": 4.2,
+     "momentum": 2.5
+    },
+    {
+     "name": "デモ製薬",
+     "code": "1021",
+     "score": 55,
+     "growth": 24.3,
+     "rating": 3.9,
+     "momentum": -6.8
+    },
+    {
+     "name": "サンプル精密工業",
+     "code": "1003",
+     "score": 54,
+     "growth": 3.3,
+     "rating": 4.7,
+     "momentum": -2.0
+    },
+    {
+     "name": "例示精密工業",
+     "code": "1043",
+     "score": 54,
+     "growth": 20.1,
+     "rating": null,
+     "momentum": -3.2
+    },
+    {
+     "name": "ダミー建設",
+     "code": "1040",
+     "score": 53,
+     "growth": 29.6,
+     "rating": 2.9,
+     "momentum": 0.8
+    },
+    {
+     "name": "見本製薬",
+     "code": "1013",
+     "score": 52,
+     "growth": 4.9,
+     "rating": 3.5,
+     "momentum": 9.0
+    },
+    {
+     "name": "テストソフトウェア",
+     "code": "1050",
+     "score": 52,
+     "growth": 7.7,
+     "rating": 4.5,
+     "momentum": -6.1
+    },
+    {
+     "name": "デモフーズ",
+     "code": "1020",
+     "score": 51,
+     "growth": 15.1,
+     "rating": 3.9,
+     "momentum": -6.8
+    },
+    {
+     "name": "ダミーフーズ",
+     "code": "1036",
+     "score": 51,
+     "growth": -6.4,
+     "rating": 3.8,
+     "momentum": 11.7
+    },
+    {
+     "name": "デモ電機",
+     "code": "1017",
+     "score": 50,
+     "growth": 20.6,
+     "rating": 3.6,
+     "momentum": -2.7
+    },
+    {
+     "name": "テスト電機",
+     "code": "1049",
+     "score": 50,
+     "growth": 4.9,
+     "rating": 3.0,
+     "momentum": 14.5
+    },
+    {
+     "name": "見本フーズ",
+     "code": "1012",
+     "score": 48,
+     "growth": 12.5,
+     "rating": null,
+     "momentum": -1.3
+    },
+    {
+     "name": "デモ精密工業",
+     "code": "1019",
+     "score": 48,
+     "growth": 11.5,
+     "rating": 4.0,
+     "momentum": -4.3
+    },
+    {
+     "name": "例示フーズ",
+     "code": "1044",
+     "score": 47,
+     "growth": 9.6,
+     "rating": 2.3,
+     "momentum": 10.8
+    },
+    {
+     "name": "テスト建設",
+     "code": "1056",
+     "score": 47,
+     "growth": -3.5,
+     "rating": 3.7,
+     "momentum": 10.2
+    },
+    {
+     "name": "仮名電機",
+     "code": "1025",
+     "score": 46,
+     "growth": 13.8,
+     "rating": 3.8,
+     "momentum": -4.4
+    },
+    {
+     "name": "例示製薬",
+     "code": "1045",
+     "score": 45,
+     "growth": -7.0,
+     "rating": 3.4,
+     "momentum": 19.9
+    },
+    {
+     "name": "テストフーズ",
+     "code": "1052",
+     "score": 44,
+     "growth": 2.2,
+     "rating": 3.5,
+     "momentum": 4.5
+    },
+    {
+     "name": "模擬精密工業",
+     "code": "1059",
+     "score": 43,
+     "growth": 6.9,
+     "rating": 2.9,
+     "momentum": 9.0
+    },
+    {
+     "name": "ダミーソフトウェア",
+     "code": "1034",
+     "score": 42,
+     "growth": 2.3,
+     "rating": 3.6,
+     "momentum": 2.0
+    },
+    {
+     "name": "仮名精密工業",
+     "code": "1027",
+     "score": 41,
+     "growth": 8.1,
+     "rating": 4.1,
+     "momentum": -18.0
+    },
+    {
+     "name": "仮名フーズ",
+     "code": "1028",
+     "score": 41,
+     "growth": 9.8,
+     "rating": 2.3,
+     "momentum": 4.4
+    },
+    {
+     "name": "仮名建設",
+     "code": "1032",
+     "score": 39,
+     "growth": -3.1,
+     "rating": null,
+     "momentum": 3.1
+    },
+    {
+     "name": "例示建設",
+     "code": "1048",
+     "score": 37,
+     "growth": -6.8,
+     "rating": 3.4,
+     "momentum": 8.3
+    },
+    {
+     "name": "テスト精密工業",
+     "code": "1051",
+     "score": 37,
+     "growth": 23.6,
+     "rating": 3.0,
+     "momentum": -11.8
+    },
+    {
+     "name": "デモソフトウェア",
+     "code": "1018",
+     "score": 36,
+     "growth": 13.5,
+     "rating": 3.4,
+     "momentum": -9.1
+    },
+    {
+     "name": "例示電機",
+     "code": "1041",
+     "score": 35,
+     "growth": 4.1,
+     "rating": 3.3,
+     "momentum": 0.7
+    },
+    {
+     "name": "例示ソフトウェア",
+     "code": "1042",
+     "score": 34,
+     "growth": 13.5,
+     "rating": 3.4,
+     "momentum": -9.2
+    },
+    {
+     "name": "サンプル電機",
+     "code": "1001",
+     "score": 33,
+     "growth": -8.5,
+     "rating": 3.8,
+     "momentum": -0.2
+    },
+    {
+     "name": "ダミー製薬",
+     "code": "1037",
+     "score": 32,
+     "growth": -7.9,
+     "rating": 3.8,
+     "momentum": 0.5
+    },
+    {
+     "name": "仮名運輸",
+     "code": "1030",
+     "score": 31,
+     "growth": 10.9,
+     "rating": null,
+     "momentum": -15.6
+    },
+    {
+     "name": "ダミー化学",
+     "code": "1039",
+     "score": 30,
+     "growth": 0.8,
+     "rating": null,
+     "momentum": -1.4
+    },
+    {
+     "name": "見本化学",
+     "code": "1015",
+     "score": 29,
+     "growth": -3.4,
+     "rating": 3.3,
+     "momentum": 0.5
+    },
+    {
+     "name": "例示化学",
+     "code": "1047",
+     "score": 28,
+     "growth": -12.3,
+     "rating": 3.1,
+     "momentum": 4.6
+    },
+    {
+     "name": "見本建設",
+     "code": "1016",
+     "score": 25,
+     "growth": 7.7,
+     "rating": null,
+     "momentum": -18.7
+    },
+    {
+     "name": "例示運輸",
+     "code": "1046",
+     "score": 24,
+     "growth": -6.3,
+     "rating": 3.7,
+     "momentum": -6.3
+    },
+    {
+     "name": "テスト運輸",
+     "code": "1054",
+     "score": 24,
+     "growth": -0.2,
+     "rating": 3.0,
+     "momentum": -0.9
+    },
+    {
+     "name": "サンプルフーズ",
+     "code": "1004",
+     "score": 19,
+     "growth": -6.6,
+     "rating": null,
+     "momentum": -2.2
+    }
+   ]
+  },
+  "us": {
+   "label": "アメリカ株",
+   "codeLabel": "ティッカー",
+   "stocks": [
+    {
+     "name": "Dummy Bio",
+     "code": "DUBIX",
+     "score": 93,
+     "growth": 18.2,
+     "rating": 4.4,
+     "momentum": 14.5
+    },
+    {
+     "name": "Mock Cloud",
+     "code": "MOCLX",
+     "score": 84,
+     "growth": 15.7,
+     "rating": 3.9,
+     "momentum": 16.4
+    },
+    {
+     "name": "Dummy Motors",
+     "code": "DUMOX",
+     "score": 82,
+     "growth": 10.3,
+     "rating": 4.5,
+     "momentum": 6.1
+    },
+    {
+     "name": "Sample Bio",
+     "code": "SABIX",
+     "score": 81,
+     "growth": 16.1,
+     "rating": 3.8,
+     "momentum": 10.7
+    },
+    {
+     "name": "Proto Tech",
+     "code": "PRTEX",
+     "score": 75,
+     "growth": -0.3,
+     "rating": 4.8,
+     "momentum": 16.0
+    },
+    {
+     "name": "Proto Health",
+     "code": "PRHEX",
+     "score": 75,
+     "growth": 14.1,
+     "rating": 4.0,
+     "momentum": 5.0
+    },
+    {
+     "name": "Demo Cloud",
+     "code": "DECLX",
+     "score": 74,
+     "growth": 9.4,
+     "rating": 3.9,
+     "momentum": 8.2
+    },
+    {
+     "name": "Trial Foods",
+     "code": "TRFOX",
+     "score": 74,
+     "growth": 15.6,
+     "rating": null,
+     "momentum": 3.1
+    },
+    {
+     "name": "Model Retail",
+     "code": "MOREX",
+     "score": 70,
+     "growth": 0.2,
+     "rating": 4.3,
+     "momentum": 9.1
+    },
+    {
+     "name": "Mock Foods",
+     "code": "MOFOX",
+     "score": 67,
+     "growth": 5.7,
+     "rating": 4.0,
+     "momentum": 4.6
+    },
+    {
+     "name": "Mock Retail",
+     "code": "MOREX",
+     "score": 66,
+     "growth": -7.3,
+     "rating": 4.4,
+     "momentum": 20.9
+    },
+    {
+     "name": "Trial Health",
+     "code": "TRHEX",
+     "score": 66,
+     "growth": 16.5,
+     "rating": 4.2,
+     "momentum": -3.1
+    },
+    {
+     "name": "Model Tech",
+     "code": "MOTEX",
+     "score": 65,
+     "growth": -5.6,
+     "rating": 4.7,
+     "momentum": 8.6
+    },
+    {
+     "name": "Sample Tech",
+     "code": "SATEX",
+     "score": 64,
+     "growth": 27.7,
+     "rating": 3.1,
+     "momentum": 4.6
+    },
+    {
+     "name": "Model Cloud",
+     "code": "MOCLX",
+     "score": 64,
+     "growth": -0.3,
+     "rating": 4.3,
+     "momentum": 5.1
+    },
+    {
+     "name": "Dummy Retail",
+     "code": "DUREX",
+     "score": 64,
+     "growth": 15.7,
+     "rating": 3.5,
+     "momentum": 3.5
+    },
+    {
+     "name": "Proto Energy",
+     "code": "PRENX",
+     "score": 63,
+     "growth": 16.6,
+     "rating": 4.1,
+     "momentum": -5.1
+    },
+    {
+     "name": "Proto Bio",
+     "code": "PRBIX",
+     "score": 63,
+     "growth": 0.9,
+     "rating": null,
+     "momentum": 8.7
+    },
+    {
+     "name": "Demo Tech",
+     "code": "DETEX",
+     "score": 62,
+     "growth": 15.3,
+     "rating": 3.6,
+     "momentum": 2.5
+    },
+    {
+     "name": "Example Tech",
+     "code": "EXTEX",
+     "score": 61,
+     "growth": 4.3,
+     "rating": 4.8,
+     "momentum": -1.9
+    },
+    {
+     "name": "Demo Motors",
+     "code": "DEMOX",
+     "score": 60,
+     "growth": 2.0,
+     "rating": null,
+     "momentum": 5.1
+    },
+    {
+     "name": "Trial Motors",
+     "code": "TRMOX",
+     "score": 60,
+     "growth": 28.4,
+     "rating": 3.2,
+     "momentum": 2.8
+    },
+    {
+     "name": "Dummy Energy",
+     "code": "DUENX",
+     "score": 60,
+     "growth": 18.8,
+     "rating": 3.1,
+     "momentum": 3.6
+    },
+    {
+     "name": "Sample Foods",
+     "code": "SAFOX",
+     "score": 58,
+     "growth": 0.8,
+     "rating": null,
+     "momentum": 5.1
+    },
+    {
+     "name": "Sample Cloud",
+     "code": "SACLX",
+     "score": 58,
+     "growth": 3.8,
+     "rating": 3.8,
+     "momentum": 4.2
+    },
+    {
+     "name": "Proto Retail",
+     "code": "PRREX",
+     "score": 58,
+     "growth": 14.3,
+     "rating": 2.8,
+     "momentum": 9.1
+    },
+    {
+     "name": "Model Bio",
+     "code": "MOBIX",
+     "score": 57,
+     "growth": 0.3,
+     "rating": 3.5,
+     "momentum": 9.9
+    },
+    {
+     "name": "Mock Tech",
+     "code": "MOTEX",
+     "score": 56,
+     "growth": 1.3,
+     "rating": 4.2,
+     "momentum": 0.4
+    },
+    {
+     "name": "Sample Motors",
+     "code": "SAMOX",
+     "score": 55,
+     "growth": 10.2,
+     "rating": 3.7,
+     "momentum": -0.1
+    },
+    {
+     "name": "Demo Retail",
+     "code": "DEREX",
+     "score": 54,
+     "growth": 14.0,
+     "rating": 3.8,
+     "momentum": -2.8
+    },
+    {
+     "name": "Trial Bio",
+     "code": "TRBIX",
+     "score": 53,
+     "growth": 9.7,
+     "rating": 3.3,
+     "momentum": 3.1
+    },
+    {
+     "name": "Trial Retail",
+     "code": "TRREX",
+     "score": 53,
+     "growth": 10.6,
+     "rating": 3.4,
+     "momentum": 1.1
+    },
+    {
+     "name": "Proto Motors",
+     "code": "PRMOX",
+     "score": 53,
+     "growth": -2.2,
+     "rating": 5.0,
+     "momentum": -2.3
+    },
+    {
+     "name": "Example Energy",
+     "code": "EXENX",
+     "score": 49,
+     "growth": 5.9,
+     "rating": 3.4,
+     "momentum": 2.9
+    },
+    {
+     "name": "Mock Energy",
+     "code": "MOENX",
+     "score": 47,
+     "growth": 14.3,
+     "rating": null,
+     "momentum": -7.9
+    },
+    {
+     "name": "Model Health",
+     "code": "MOHEX",
+     "score": 47,
+     "growth": -0.5,
+     "rating": 3.9,
+     "momentum": 1.0
+    },
+    {
+     "name": "Example Foods",
+     "code": "EXFOX",
+     "score": 46,
+     "growth": -3.9,
+     "rating": 3.5,
+     "momentum": 5.9
+    },
+    {
+     "name": "Demo Foods",
+     "code": "DEFOX",
+     "score": 44,
+     "growth": 4.3,
+     "rating": 3.9,
+     "momentum": -10.6
+    },
+    {
+     "name": "Example Bio",
+     "code": "EXBIX",
+     "score": 41,
+     "growth": -0.0,
+     "rating": 3.9,
+     "momentum": -2.9
+    },
+    {
+     "name": "Demo Bio",
+     "code": "DEBIX",
+     "score": 40,
+     "growth": 8.6,
+     "rating": 3.2,
+     "momentum": -2.7
+    },
+    {
+     "name": "Proto Cloud",
+     "code": "PRCLX",
+     "score": 39,
+     "growth": -6.6,
+     "rating": 3.8,
+     "momentum": 1.8
+    },
+    {
+     "name": "Dummy Foods",
+     "code": "DUFOX",
+     "score": 38,
+     "growth": 5.8,
+     "rating": 3.7,
+     "momentum": -8.1
+    },
+    {
+     "name": "Dummy Tech",
+     "code": "DUTEX",
+     "score": 37,
+     "growth": -5.6,
+     "rating": null,
+     "momentum": 3.0
+    },
+    {
+     "name": "Sample Energy",
+     "code": "SAENX",
+     "score": 36,
+     "growth": 3.4,
+     "rating": 3.2,
+     "momentum": -2.6
+    },
+    {
+     "name": "Dummy Cloud",
+     "code": "DUCLX",
+     "score": 34,
+     "growth": 2.4,
+     "rating": 3.1,
+     "momentum": -1.7
+    },
+    {
+     "name": "Sample Retail",
+     "code": "SAREX",
+     "score": 33,
+     "growth": -4.1,
+     "rating": null,
+     "momentum": 1.0
+    },
+    {
+     "name": "Mock Bio",
+     "code": "MOBIX",
+     "score": 33,
+     "growth": -9.3,
+     "rating": 3.9,
+     "momentum": -3.2
+    },
+    {
+     "name": "Model Motors",
+     "code": "MOMOX",
+     "score": 32,
+     "growth": 7.7,
+     "rating": null,
+     "momentum": -12.2
+    },
+    {
+     "name": "Trial Energy",
+     "code": "TRENX",
+     "score": 31,
+     "growth": -1.2,
+     "rating": 3.7,
+     "momentum": -5.4
+    },
+    {
+     "name": "Proto Foods",
+     "code": "PRFOX",
+     "score": 31,
+     "growth": 8.5,
+     "rating": 2.9,
+     "momentum": -3.2
+    },
+    {
+     "name": "Demo Health",
+     "code": "DEHEX",
+     "score": 29,
+     "growth": 7.9,
+     "rating": 2.8,
+     "momentum": -4.6
+    },
+    {
+     "name": "Mock Health",
+     "code": "MOHEX",
+     "score": 29,
+     "growth": 8.7,
+     "rating": 3.1,
+     "momentum": -17.9
+    },
+    {
+     "name": "Trial Cloud",
+     "code": "TRCLX",
+     "score": 29,
+     "growth": -11.6,
+     "rating": null,
+     "momentum": 1.8
+    },
+    {
+     "name": "Trial Tech",
+     "code": "TRTEX",
+     "score": 28,
+     "growth": 14.3,
+     "rating": 2.4,
+     "momentum": -21.1
+    },
+    {
+     "name": "Dummy Health",
+     "code": "DUHEX",
+     "score": 24,
+     "growth": -5.5,
+     "rating": 3.1,
+     "momentum": -1.4
+    },
+    {
+     "name": "Model Foods",
+     "code": "MOFOX",
+     "score": 23,
+     "growth": -0.6,
+     "rating": 2.7,
+     "momentum": -1.8
+    },
+    {
+     "name": "Model Energy",
+     "code": "MOENX",
+     "score": 21,
+     "growth": -13.6,
+     "rating": 3.5,
+     "momentum": -5.6
+    },
+    {
+     "name": "Demo Energy",
+     "code": "DEENX",
+     "score": 20,
+     "growth": -3.6,
+     "rating": 3.0,
+     "momentum": -3.1
+    },
+    {
+     "name": "Sample Health",
+     "code": "SAHEX",
+     "score": 18,
+     "growth": -7.1,
+     "rating": 3.3,
+     "momentum": -7.3
+    },
+    {
+     "name": "Mock Motors",
+     "code": "MOMOX",
+     "score": 15,
+     "growth": -15.5,
+     "rating": 3.4,
+     "momentum": -14.1
+    }
+   ]
+  }
+ }
+}
+</script>
+<!-- ▲▲ 株の数字のかたまり ここまで ▲▲ -->
+
+<script>
+(function () {
+  'use strict';
+
+  var DATA = JSON.parse(document.getElementById('ranking-data').textContent);
+  var PAGE = 20;
+  var KEY = 'mainichi-ranking:v1';
+  var state = { market: 'jp', shown: PAGE, rendered: 0 };
+  var cache = {};
+  var lastRow = null;
+  var lastScroll = 0;
+
+  function $(id) { return document.getElementById(id); }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ---------- 覚えておくこと（最後に見ていた「日本株／アメリカ株」） ---------- */
+  function loadPrefs() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY));
+      if (v && DATA.markets[v.market]) { state.market = v.market; }
+    } catch (e) { /* 覚えられなくても、そのまま使える */ }
+  }
+  function savePrefs() {
+    try { localStorage.setItem(KEY, JSON.stringify({ market: state.market })); } catch (e) { }
+  }
+
+  /* ---------- 順位づけ ---------- */
+  var KEYS = ['growth', 'rating', 'momentum'];
+  function prepare(m) {
+    if (cache[m]) { return cache[m]; }
+    var src = (DATA.markets[m] && DATA.markets[m].stocks) || [];
+    var list = src.map(function (s, i) {
+      var o = {}; for (var k in s) { o[k] = s[k]; } o._i = i; return o;
+    });
+    list.sort(function (a, b) { return (b.score - a.score) || (a._i - b._i); });
+    KEYS.forEach(function (k) {
+      var have = list.filter(function (s) { return isNum(s[k]); });
+      have.sort(function (a, b) { return b[k] - a[k]; });
+      have.forEach(function (s, idx) { s['_p_' + k] = Math.max(1, Math.ceil((idx + 1) / have.length * 100)); });
+    });
+    cache[m] = list;
+    return list;
+  }
+
+  /* ---------- 数字の見せ方 ---------- */
+  var NONE = '<span class="none">データなし</span>';
+  function pctHTML(v) {
+    var r = Math.round(v * 10) / 10, a = Math.abs(r).toFixed(1);
+    if (r > 0) { return '<span class="up">▲ ' + a + '%</span>'; }
+    if (r < 0) { return '<span class="down">▼ ' + a + '%</span>'; }
+    return '<span class="flat">± 0.0%</span>';
+  }
+  function growthHTML(s) { return isNum(s.growth) ? pctHTML(s.growth) : NONE; }
+  function ratingHTML(s) { return isNum(s.rating) ? s.rating.toFixed(1) + ' <small>/ 5</small>' : NONE; }
+  function momentumHTML(s) { return isNum(s.momentum) ? pctHTML(s.momentum) : NONE; }
+  function signed(v) {
+    var r = Math.round(v * 10) / 10, a = Math.abs(r).toFixed(1);
+    return (r > 0 ? '+' : (r < 0 ? '−' : '')) + a;
+  }
+
+  /* ---------- 日付 ---------- */
+  var WEEK = '日月火水木金土';
+  function jst(d) { return new Date(d.getTime() + 9 * 3600 * 1000); }
+  function dayKey(j) { return j.getUTCFullYear() * 10000 + (j.getUTCMonth() + 1) * 100 + j.getUTCDate(); }
+  function addDays(j, n) { return new Date(Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate() + n)); }
+  function fmtUpdated(iso) {
+    var j = jst(new Date(iso));
+    var h = j.getUTCHours(), mi = ('0' + j.getUTCMinutes()).slice(-2);
+    return '最終更新：' + (j.getUTCMonth() + 1) + '月' + j.getUTCDate() + '日（' + WEEK.charAt(j.getUTCDay()) + '）' +
+      (h < 12 ? '朝' : '午後') + h + ':' + mi;
+  }
+  /* いまの時点で「届いているはずの、いちばん新しい平日の日付」 */
+  function expectedDay(now) {
+    var j = jst(now), dow = j.getUTCDay(), mins = j.getUTCHours() * 60 + j.getUTCMinutes();
+    var day = new Date(Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate()));
+    if (!(dow >= 1 && dow <= 5 && mins >= 8 * 60)) { day = addDays(day, -1); }
+    while (day.getUTCDay() === 0 || day.getUTCDay() === 6) { day = addDays(day, -1); }
+    return day;
+  }
+
+  function renderHead() {
+    $('updated').textContent = DATA.updatedAt ? fmtUpdated(DATA.updatedAt) : '最終更新：まだありません';
+    var box = $('notices');
+    box.innerHTML = '';
+    function add(cls, text) {
+      var d = document.createElement('div');
+      d.className = 'notice ' + cls;
+      d.setAttribute('role', 'status');
+      d.textContent = text;
+      box.appendChild(d);
+    }
+    if (DATA.isSample) {
+      add('sample', '見本のデータです。本物の株の数字ではありません。');
+      return;
+    }
+    if (!DATA.updatedAt) { return; }
+    var d = jst(new Date(DATA.updatedAt));
+    if (dayKey(d) < dayKey(expectedDay(new Date()))) {
+      add('fail', '今朝の更新に失敗しました。' + (d.getUTCMonth() + 1) + '月' + d.getUTCDate() + '日のデータです');
+    }
+  }
+
+  /* ---------- 一覧 ---------- */
+  function rowEl(s, i) {
+    var n = i + 1;
+    var li = document.createElement('li');
+    li.className = 'item' + (n <= 3 ? ' top' : '');
+    li.innerHTML =
+      '<button type="button" class="row" data-idx="' + i + '">' +
+        '<div class="rank">' + n + '</div>' +
+        '<div class="who"><div class="name">' + esc(s.name) + '</div>' +
+          '<div class="code">' + esc(DATA.markets[state.market].codeLabel || 'コード') + ' ' + esc(s.code) + '</div></div>' +
+        '<div class="score"><span class="num">' + s.score + '</span><span class="unit">点</span></div>' +
+        '<div class="gauge" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, s.score)) + '%"></i></div>' +
+        '<dl class="facts">' +
+          '<div><dt>業績の伸び</dt><dd>' + growthHTML(s) + '</dd></div>' +
+          '<div><dt>アナリスト評価</dt><dd>' + ratingHTML(s) + '</dd></div>' +
+          '<div><dt>株価の勢い</dt><dd>' + momentumHTML(s) + '</dd></div>' +
+        '</dl>' +
+      '</button>';
+    return li;
+  }
+
+  function renderList(reset) {
+    var list = $('list'), m = prepare(state.market);
+    if (reset) { list.innerHTML = ''; state.rendered = 0; }
+    if (m.length === 0) {
+      list.innerHTML = '<li class="empty">ランキングはまだありません。</li>';
+      $('count').textContent = '';
+      $('more').hidden = true;
+      return;
+    }
+    var end = Math.min(state.shown, m.length);
+    for (var i = state.rendered; i < end; i++) { list.appendChild(rowEl(m[i], i)); }
+    state.rendered = end;
+    $('count').textContent = '全' + m.length + '株のうち、' + end + '位まで表示しています';
+    $('more').hidden = end >= m.length;
+  }
+
+  function renderTabs() {
+    ['jp', 'us'].forEach(function (k) {
+      $('tab-' + k).setAttribute('aria-selected', String(k === state.market));
+    });
+  }
+
+  function setMarket(m) {
+    if (m === state.market || !DATA.markets[m]) { return; }
+    state.market = m;
+    state.shown = PAGE;
+    savePrefs();
+    renderTabs();
+    renderList(true);
+  }
+
+  /* ---------- 株の詳細 ---------- */
+  function metricBlock(label, valHTML, p, mk) {
+    return '<div class="metric"><div class="m-label">' + label + '</div>' +
+      '<div class="m-val">' + valHTML + '</div>' +
+      '<div class="m-pos">' + (p ? mk + 'の上位' + p + '%' : '') + '</div></div>';
+  }
+
+  function openSheet(idx, btn) {
+    var m = prepare(state.market), s = m[idx];
+    if (!s) { return; }
+    var mk = DATA.markets[state.market].label;
+    lastRow = btn;
+    lastScroll = window.pageYOffset;
+
+    $('d-rankline').textContent = mk + '　' + (idx + 1) + '位';
+    $('d-name').textContent = s.name;
+    $('d-code').textContent = (DATA.markets[state.market].codeLabel || 'コード') + ' ' + s.code;
+    $('d-num').textContent = s.score;
+    $('d-gauge').style.width = Math.max(0, Math.min(100, s.score)) + '%';
+
+    $('d-metrics').innerHTML =
+      metricBlock('業績の伸び', growthHTML(s), s._p_growth, mk) +
+      metricBlock('アナリスト評価', ratingHTML(s), s._p_rating, mk) +
+      metricBlock('株価の勢い', momentumHTML(s), s._p_momentum, mk);
+
+    var lines = [];
+    if (isNum(s.growth)) {
+      lines.push({ p: s._p_growth, t: '業績の伸びは' + signed(s.growth) + '%。' + mk + 'の中で上位' + s._p_growth + '%です。' });
+    }
+    if (isNum(s.rating)) {
+      lines.push({ p: s._p_rating, t: 'アナリストの評価は5点満点で' + s.rating.toFixed(1) + '。' + mk + 'の中で上位' + s._p_rating + '%です。' });
+    }
+    if (isNum(s.momentum)) {
+      lines.push({ p: s._p_momentum, t: '最近の株価の勢いは' + signed(s.momentum) + '%。' + mk + 'の中で上位' + s._p_momentum + '%です。' });
+    }
+    lines.sort(function (a, b) { return a.p - b.p; });
+    $('d-why').innerHTML = lines.map(function (l) { return '<li>' + esc(l.t) + '</li>'; }).join('');
+
+    $('sheet').hidden = false;
+    $('panel').scrollTop = 0;
+    $('panel').focus();
+  }
+
+  function closeSheet() {
+    if ($('sheet').hidden) { return; }
+    $('sheet').hidden = true;
+    window.scrollTo(0, lastScroll);
+    if (lastRow) { try { lastRow.focus({ preventScroll: true }); } catch (e) { } }
+  }
+
+  /* ---------- 動かす ---------- */
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('.tab');
+    if (b) { setMarket(b.getAttribute('data-market')); }
+  });
+  $('list').addEventListener('click', function (e) {
+    var b = e.target.closest('.row');
+    if (b) { openSheet(parseInt(b.getAttribute('data-idx'), 10), b); }
+  });
+  $('more').addEventListener('click', function () {
+    state.shown += PAGE;
+    renderList(false);
+  });
+  $('close').addEventListener('click', closeSheet);
+  $('scrim').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeSheet(); }
+  });
+
+  loadPrefs();
+  renderHead();
+  renderTabs();
+  renderList(true);
+})();
+</script>
+</body>
+</html>
