@@ -1,0 +1,49 @@
+name: 毎朝ランキングを更新する
+
+on:
+  schedule:
+    - cron: "30 21 * * 0-4"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: ファイルを取り込む
+        uses: actions/checkout@v4
+
+      - name: Python を用意する
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 必要な部品を入れる
+        run: pip install -r requirements.txt
+
+      - name: 株の数字を集めて、画面を作る
+        run: python update_data.py
+
+      - name: 公開の準備をする
+        uses: actions/configure-pages@v5
+
+      - name: 画面を送る
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: 公開する
+        id: deployment
+        uses: actions/deploy-pages@v4
