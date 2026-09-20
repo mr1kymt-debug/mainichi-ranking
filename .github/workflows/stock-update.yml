@@ -1,0 +1,41 @@
+name: update-stock-screener
+
+on:
+  schedule:
+    # 平日の22:15 UTC（日本時間の朝7:15）。米国株は前日の終値、日本株は当日の終値が反映済み
+    - cron: "15 22 * * 1-5"
+  workflow_dispatch:   # Actionsタブから手動でも実行できる
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-screener      # 同じ設定が重なって動かないようにする
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # requirements.txt には頼らず、この仕組みに必要なものだけを入れる
+      - run: pip install yfinance pandas
+
+      - name: スコアを計算
+        run: python stock_screener.py
+
+      - name: ページを作成（取得失敗が多いときはここで止まり、公開中のページは更新されない）
+        run: python build_page.py
+
+      - name: 変更を保存
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add screener_result.csv docs/index.html
+          git diff --cached --quiet || git commit -m "update stock screener $(date -u +%F)"
+          git pull --rebase
+          git push
