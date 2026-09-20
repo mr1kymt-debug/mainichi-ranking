@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>株スコアボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #edf0f3;
+    --surface: #fafbfc;
+    --ink: #16212c;
+    --muted: #5b6875;
+    --line: #d5dbe2;
+    --track: #dde3e9;
+    --bar: #16212c;
+    --up: #c43a2b;
+    --down: #2a63b5;
+    --focus: #2a63b5;
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161c;
+      --surface: #182029;
+      --ink: #e7ecf1;
+      --muted: #93a0ae;
+      --line: #2b3541;
+      --track: #2b3541;
+      --bar: #e7ecf1;
+      --up: #f0705f;
+      --down: #6fa2e8;
+      --focus: #6fa2e8;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161c;
+    --surface: #182029;
+    --ink: #e7ecf1;
+    --muted: #93a0ae;
+    --line: #2b3541;
+    --track: #2b3541;
+    --bar: #e7ecf1;
+    --up: #f0705f;
+    --down: #6fa2e8;
+    --focus: #6fa2e8;
+    color-scheme: dark;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 20px 16px 40px; }
+  button { font: inherit; color: inherit; }
+  a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  h1 { font-size: 24px; line-height: 1.3; font-weight: 700; margin: 0 0 4px; letter-spacing: 0.01em; }
+  .status { margin: 0; color: var(--muted); font-size: 13px; }
+  .demo {
+    display: inline-block; margin-top: 8px; padding: 2px 10px;
+    border: 1px solid var(--line); border-radius: 999px;
+    font-size: 12px; color: var(--muted); background: var(--surface);
+  }
+
+  .tabs { display: flex; gap: 20px; margin: 20px 0 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tab {
+    background: none; border: 0; padding: 8px 0 10px; cursor: pointer; white-space: nowrap;
+    color: var(--muted); font-weight: 500; border-bottom: 3px solid transparent; margin-bottom: -1px;
+  }
+  .tab[aria-selected="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--ink); }
+  .tab .n { font-weight: 400; color: var(--muted); margin-left: 6px; font-size: 13px; }
+
+  ol.list { list-style: none; margin: 0; padding: 0; }
+  .item { border-bottom: 1px solid var(--line); }
+  .row {
+    width: 100%; display: grid; grid-template-columns: 28px 1fr auto; column-gap: 12px; align-items: center;
+    padding: 14px 0; background: none; border: 0; text-align: left; cursor: pointer; min-height: 64px;
+  }
+  .rank { font-size: 15px; color: var(--muted); font-weight: 500; text-align: right; }
+  .rank.top { color: var(--ink); font-weight: 700; }
+  .name { font-weight: 700; font-size: 16px; overflow-wrap: anywhere; }
+  .code { color: var(--muted); font-size: 12px; font-weight: 400; margin-left: 6px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .sub .dir { margin-left: 10px; color: var(--ink); }
+  .score { font-size: 32px; line-height: 1; font-weight: 700; letter-spacing: -0.01em; }
+  .track { display: block; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; margin-top: 8px; }
+  .fill { display: block; height: 100%; background: var(--bar); border-radius: 2px; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+
+  .chip {
+    display: inline-block; margin-left: 8px; padding: 0 9px; border-radius: 999px; vertical-align: 2px;
+    font-size: 12px; font-weight: 500; line-height: 20px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .chip.good { border-color: var(--ink); color: var(--ink); }
+  .chip.warn { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 700; }
+  .chip.big { margin-left: 0; font-size: 15px; line-height: 28px; padding: 0 16px; font-weight: 700; }
+
+  .detail { padding: 2px 0 18px 40px; }
+  .sum { display: flex; gap: 28px; padding: 2px 0 6px; }
+  .stat-l { display: block; color: var(--muted); font-size: 12px; }
+  .stat-v { font-size: 22px; font-weight: 700; line-height: 1.3; }
+  .stat-v small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .gh { margin: 16px 0 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .f { padding: 8px 0; }
+  .f-top { display: flex; justify-content: space-between; gap: 12px; }
+  .f-name { color: var(--muted); font-size: 13px; }
+  .f-val { font-weight: 700; }
+  .f-rank { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 10px; }
+  .f-rank .track { margin-top: 6px; height: 3px; }
+  .f-rank .pos { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .na { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .fc-dir { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0 6px; }
+  .fc-why { color: var(--muted); font-size: 13px; }
+  .fc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .fc-row:last-of-type { border-bottom: 0; }
+  .fc-l { color: var(--muted); font-size: 13px; }
+  .fc-v { font-weight: 700; text-align: right; }
+  .fc-note { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+
+  .mbox { margin: 16px 0 4px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .mbox-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .mbox-title { font-weight: 700; }
+  .mbox .chip { margin-left: 0; }
+  .mbox p { margin: 8px 0 0; font-size: 14px; }
+  .mbox .asof { color: var(--muted); font-size: 12px; }
+  .ntext { margin: 8px 0 0; font-size: 14px; }
+  ul.pts { margin: 8px 0 0; padding-left: 1.2em; font-size: 14px; }
+  ul.pts li { margin: 2px 0; }
+  .src { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+  .src a { margin-right: 10px; display: inline-block; }
+
+  .news-head { margin: 22px 0 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .ncard { padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .ncard-top { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 0; }
+  .stale { margin: 12px 0 0; padding: 8px 12px; border: 1px solid var(--ink); border-radius: 8px; font-size: 13px; }
+
+  details.data { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  details.data > summary { cursor: pointer; padding: 14px 16px; font-weight: 700; list-style-position: inside; }
+  .data-body { padding: 0 16px 16px; }
+  .data-body p { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+  .data-body code { font-size: 13px; color: var(--ink); background: var(--track); padding: 1px 5px; border-radius: 4px; }
+  .btn {
+    display: inline-block; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--ink);
+    background: var(--ink); color: var(--bg); font-weight: 700; cursor: pointer; text-align: center;
+  }
+  .btn.ghost { background: none; color: var(--ink); border-color: var(--line); font-weight: 500; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  input[type=file]:focus-visible + .btn { outline: 2px solid var(--focus); outline-offset: 2px; }
+  textarea {
+    width: 100%; min-height: 96px; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--ink); font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; resize: vertical;
+  }
+  .msg { min-height: 1.5em; margin: 10px 0 0; font-size: 14px; }
+  .msg.err { color: var(--up); }
+
+  .note { margin-top: 24px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>株スコアボード</h1>
+    <p class="status" id="status"></p>
+    <span class="demo" id="demo" hidden>サンプル表示（架空のデータです）</span>
+  </header>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="表示の切り替え"></div>
+  <div id="mbox"></div>
+  <ol class="list" id="list"></ol>
+  <div id="newsView" hidden></div>
+
+  <details class="data" id="dataBox" open>
+    <summary>データを読み込む</summary>
+    <div class="data-body">
+      <p>パソコンで <code>stock_screener.py</code> を実行すると出来る <code>screener_result.csv</code> を読み込むと、実際のスコアと1か月後の見立てに切り替わります。ニュースの <code>news_view.json</code> も同じ方法で読み込めます。読み込んだデータは保存され、次回以降もこのページに表示されます。</p>
+      <div class="btn-row">
+        <label style="position:relative">
+          <input type="file" id="file" accept=".csv,.json,text/csv,application/json,text/plain">
+          <span class="btn" role="button">ファイルを選ぶ</span>
+        </label>
+      </div>
+      <p>ファイルが使いにくいときは、中身をここに貼り付けてください。</p>
+      <textarea id="paste" placeholder="CSVまたはJSONの中身を貼り付け" aria-label="CSVまたはJSONの中身"></textarea>
+      <div class="btn-row">
+        <button class="btn" id="loadPaste" type="button">貼り付けた内容を読み込む</button>
+        <button class="btn ghost" id="reset" type="button">保存データを消す</button>
+      </div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </div>
+  </details>
+
+  <p class="note">点数や「頭打ち注意」などの判定は、同じ市場の中での比べ合いです。総合スコアは、上昇の勢い75%と、頭打ちしにくさ25%で決めています。「1か月後の見立て」は、これに直近のニュースと市場全体の状況を加えた目安で、株価の範囲は過去1年の値動きの大きさから計算しています。ニュースはウェブの報道をもとにClaudeが要約したもので、間違いを含む可能性があります。投資判断の補助用の参考情報で、将来の値上がりを保証するものではありません。</p>
+</main>
+
+<script id="embedded" type="application/json">{"csv": "ticker,market,price,ret_1m,ret_3m,above_ma200,volume_ratio,rsi14,slowdown,vol_1m,revenue_growth,earnings_growth,pe_improve,forward_pe,rising_score,plateau_risk,outlook,score,news_tone,market_tone,direction,range_low,range_high,wide_low,wide_high\n7203.T,JP,3025.0,-0.013372472276581893,0.08950117053844764,-0.044186355886588036,0.8898302020274136,48.69269019069426,0.04320619578939777,0.0906,0.104,0.869,0.9223634082647693,9.330085,68.0,53.0,上昇していない,62.8,中立,中立,やや上向き,2762.9,3311.97,2532.67,3613.04\n6861.T,JP,76580.0,-0.047484578363853336,-0.010830445130537991,0.12786406602857392,0.8017788662949953,43.29662915853975,0.043874429987007336,0.1169,0.328,0.51,1.0160343396869622,41.00911,67.0,59.0,上昇していない,60.5,中立,中立,やや上向き,68132.92,86074.35,60901.64,96294.56\n9984.T,JP,6315.0,0.17226656766289206,-0.11193924905076647,0.230645255512131,1.3895222674425611,56.88366377464275,-0.2095796506798142,0.2502,0.109,-0.178,0.33835207883228446,21.385756,57.0,54.0,上昇していない,54.2,中立,中立,横ばい,4917.11,8110.3,3867.17,10312.26\n8035.T,JP,53110.0,-0.016845612736023696,-0.2952494692144374,0.08403581407032745,0.7973804202644583,45.46213670658835,-0.08157087700212211,0.164,0.333,0.404,1.0213818224522924,41.485706,54.0,61.0,上昇していない,50.2,追い風,中立,やや上向き,45076.18,62575.66,38509.44,73246.26\n6758.T,JP,3697.0,-0.02118083134763038,0.17738853503184715,0.029951088802239623,0.7171478621415597,46.77563934721402,0.08031034302491277,0.1004,0.082,0.476,0.9832018442694032,20.180132,54.0,73.0,頭打ち注意,47.2,追い風,中立,横ばい,3343.95,4087.32,3036.79,4500.75\nNVDA,US,222.27,0.022792393468480387,0.05614272900761552,0.12245463984701122,0.9340976974968025,54.3554455887774,-0.0040781504659418814,0.1096,1.059,1.278,1.9826333242221161,14.173006,74.0,47.0,様子見,68.8,追い風,逆風,上向き,199.19,248.02,179.29,275.55\nGOOGL,US,349.54,0.014634147637836659,-0.049629932641102714,0.03694291942712091,0.9893513954486806,55.088550896766606,-0.03117745851820423,0.0904,0.242,2.94,0.7470818694428218,23.48764,58.0,48.0,上昇していない,56.5,中立,逆風,横ばい,319.32,382.62,292.77,417.32\nMSFT,US,493.78,0.021472910661714417,0.3039261028789282,0.14812350696471177,0.6839144274701437,53.2594682698603,0.07983579029792831,0.093,0.177,0.317,1.3128926509169674,20.929373,61.0,67.0,頭打ち注意,54.0,中立,逆風,やや下向き,449.93,541.91,411.49,592.52\nAAPL,US,336.13,0.060916008990660186,0.1288879514208432,0.17551135640714288,0.8583421439220863,64.30000226985294,-0.01795335851704579,0.0721,0.164,0.287,1.1008725389150873,35.05517,57.0,76.0,頭打ち注意,48.8,中立,逆風,下向き,312.76,361.25,291.85,387.13\nAMZN,US,253.71,-0.04562891134186542,0.0381357966671918,0.05580197659241182,0.8271669424563223,48.042646553138205,0.05834084356426269,0.0981,0.196,2.423,0.8346765201977745,24.453907,50.0,62.0,様子見,47.0,追い風,逆風,横ばい,230.01,279.85,209.34,307.48\n", "updatedAt": "2026-09-20T13:17:14.912114+00:00", "news": {"asOf": "2026-09-20", "note": "ウェブ上の報道をもとにClaudeが要約したものです。間違いを含む可能性があるため、大事な判断の前は元の記事も確認してください。", "market": {"US": {"tone": "逆風", "summary": "9月16日、米国の中央銀行（FRB）が3年ぶりに利上げ（0.25%）を決め、政策金利は3.75〜4.00%になりました。年内にもう1回の利上げが見込まれています。長期金利（米国10年債）は5%台、原油は1バレル100ドル超と高く、株価の重しになっています。決定日はダウ平均が約1.2%、S&P500が約0.45%下がりました。AI関連の強い決算が支えになる一方、金利が上がると割高な株は売られやすい状況です。", "points": ["FRB幹部の予測では、年内にもう1回の利上げがあり、2027年の利下げは見込まれていません", "過去の例では、最初の利上げ直後は株が弱くても、1年後には上がっていた場合が多いという指摘もあります（利上げ幅が大きい場合は例外）"], "sources": [{"title": "CNBC：9月の米国株の動き（ライブ更新）", "url": "https://www.cnbc.com/2026/09/15/stock-market-today-live-updates.html"}, {"title": "Yahoo Finance：9月16日の米国株とFRBの決定", "url": "https://finance.yahoo.com/markets/live/stock-market-today-wednesday-september-16-dow-sp-500-nasdaq-fed-meeting-decision-080356525.html"}, {"title": "Motley Fool：利上げの後、株はどうなってきたか", "url": "https://www.fool.com/investing/2026/09/19/fed-chair-kevin-warsh-fomc-hiked-interest-rates-36-years-history-make-clear-what-next-for-stocks/"}]}, "JP": {"tone": "中立", "summary": "日銀は9月18日に政策金利を0.25%引き上げて1.25%にしました（市場の予想どおり）。同じ日の日経平均は前日比約1.5%高の6万5,100円前後で、AI・半導体関連が上昇を引っ張りました。ただ、9月上旬には円高（1ドル155円台）が進み、輸出企業の利益が減るとの見方から下がる場面がありました。日経平均は6月25日の高値（約7万2,400円）を1割ほど下回っています。長期の国債の利回りも高く、金利の上昇が続くかが焦点です。", "points": ["円高は、トヨタやキーエンスなど海外で稼ぐ企業には向かい風です", "AI・半導体関連（東京エレクトロン、アドバンテストなど）は買われやすい状況です"], "sources": [{"title": "Trading Economics：日経平均の日々の動き", "url": "https://tradingeconomics.com/japan/stock-market"}, {"title": "FXEmpire：日経平均と円相場の分析", "url": "https://www.fxempire.com/forecasts/article/premium-nikkei-225-analysis-is-the-yen-still-driving-tokyo-as-intervention-risk-looms-1622313"}, {"title": "note：日本市場レポート（9月3日）", "url": "https://note.com/hirokimiyano/n/ned80664c001c?hl=en"}]}}, "tickers": {"AAPL": {"name": "アップル", "tone": "中立", "summary": "7月30日の4〜6月決算は、売上が約1,094億ドル（前年比+16%）で市場予想を上回りました。9月1日にジョン・ターナス氏が新CEOに就任し、9月9日には初の折りたたみ型iPhone（報道では約2,199ドルから）と新型のiPhone 18 Proが発表される予定でした。一方、AI向け需要でメモリ部品が値上がりしており、価格の高さや利益率への影響が心配されています。株価は予想利益の約35倍と割高で、新製品の発表後は「材料出尽くし」で売られることもあります。", "points": ["4〜6月決算は売上+16%で予想を上回る", "新CEOのもと、折りたたみ型など大きな新製品を投入（発表後の株価の反応は今回は確認できていません）", "心配な点：部品の値上がり、高い価格、割高な株価"], "sources": [{"title": "Barchart：決算と9月の新製品発表の見どころ", "url": "https://www.barchart.com/story/news/3892461/why-investors-should-consider-buying-apple-stock-ahead-of-its-september-iphone-event"}, {"title": "Euronews：折りたたみ型iPhoneの発表予定", "url": "https://www.euronews.com/2026/08/27/apple-to-unveil-foldable-iphone-ultra-on-9-september"}]}, "MSFT": {"name": "マイクロソフト", "tone": "中立", "summary": "クラウド事業（Azure）は前年比+40%と高い伸びが続き、AI関連の契約も大きく積み上がっています。一方、AI向けの設備投資が非常に大きく（年間で約1,900億ドル規模と報じられています）、利益への負担が心配されて、株価は今年に入って約2割下がり、主要な大手IT企業の中で最も出遅れています。OpenAI株（約27%）の価値にも注目が集まり、OpenAIが上場すれば追い風になるとの見方もあります。", "points": ["Azure（クラウド）は+40%の成長", "株価は年初から約2割の下落で、大手ITの中で最も出遅れ", "OpenAIが2027年にも上場する可能性が報じられている"], "sources": [{"title": "Motley Fool（Longport経由）：OpenAI上場とマイクロソフト", "url": "https://longportapp.cn/news/291708797"}]}, "NVDA": {"name": "エヌビディア", "tone": "追い風", "summary": "8月26日の決算は、売上が約962億ドルで市場予想（約919億ドル）を上回り、次の四半期は約1,080億ドルを見込むと発表しました。来期の売上は約70%増える見通しで、市場予想（約44%増）を大きく上回っています。決算の翌日に株価は約9%上がりました。それでも年初からの上昇は約16%にとどまり、半導体株の指数（約62%上昇）には見劣りしています。", "points": ["決算も見通しも市場予想を上回った", "大手クラウド各社のAI向け設備投資が、来年さらに増える見通し", "心配な点：米国の金利上昇、AI投資が続くかどうか"], "sources": [{"title": "TechSpot：決算の速報", "url": "https://techspot.com/news/113642-nvidia-posts-record-quarter-predicts-ai-driven-growth.html"}, {"title": "Nasdaq（Motley Fool）：9月末の株価予想", "url": "https://www.nasdaq.com/articles/prediction-where-nvidia-stock-will-be-when-september-ends"}]}, "GOOGL": {"name": "アルファベット（グーグル）", "tone": "中立", "summary": "4〜6月決算では、クラウドの売上が前年比+82%（約248億ドル）と急拡大し、受注残も過去最高でした。一方、年間の設備投資の見通しを1,950〜2,050億ドルへ引き上げたため、決算直後は株価が下がり、その後は持ち直しています。次世代AI「Gemini 3.5 Pro」の公開が6月から遅れているとの報道もあります。ロイターによると、約850億ドルの株式発行も計画しています。", "points": ["クラウドが+82%と急成長、受注残は過去最高", "設備投資が大きく膨らむことへの警戒", "AIの新モデルの公開が遅れている"], "sources": [{"title": "決算の分析（FN2）：クラウド+82%、設備投資の引き上げ", "url": "https://fn2.ai/earnings/goog/2026-q2"}, {"title": "ロイター（The Star経由）：Geminiの遅れと投資への不安", "url": "https://www.thestar.com.my/tech/tech-news/2026/07/21/alphabet039s-gemini-delay-spending-worries-loom-over-earnings"}]}, "AMZN": {"name": "アマゾン", "tone": "追い風", "summary": "7月30日の4〜6月決算は、売上が2,006億ドル（前年比+20%）で初めて2,000億ドルを超えました。クラウド（AWS）は+37%と18四半期ぶりの高い伸びで、翌日の株価は約15%上がりました。設備投資の見通しは約2,200億ドルに引き上げましたが、AWSの受注残（約4,960億ドル）が支えとなり、市場は好感しました。純利益にはAnthropic株の評価益（約534億ドル）が含まれるため、本業の実力とは分けて見る必要があります。7〜9月の売上見通しは市場予想をやや下回りました。", "points": ["AWSが+37%で、成長が5四半期連続で加速", "売上・営業利益とも市場予想を上回った", "7〜9月の見通しはやや弱め（プライムデーの時期のずれが主な理由との見方）"], "sources": [{"title": "Amazon発表：4〜6月決算", "url": "https://www.emr-online.com/?p=14042"}, {"title": "Benzinga（Webull経由）：AWSの急成長を評価", "url": "https://www.webull.ca/news-detail/15321400666973184"}]}, "7203.T": {"name": "トヨタ自動車", "tone": "中立", "summary": "8月4日の4〜6月決算は、円安（約160円/ドル）が追い風となり、純利益が約1.48兆円（前年比+75.6%）と大きく増えました。ただ、本業の営業利益は前年比-8.8%の約1.06兆円です。通期の見通し（営業利益3.4兆円、純利益3.25兆円）を引き上げ、最大1兆円の自社株買いも発表しましたが、純利益の見通しは市場予想（約3.63兆円）に届きませんでした。中国での販売不振、EVの目標引き下げ、7月の熊本地震による生産への影響も課題です。9月に入って円高（155円台）が進んだことは、会社が前提にした160円と比べて向かい風です。", "points": ["純利益は円安で急増したが、営業利益は減少", "通期見通しの引き上げと、自社株買い（最大1兆円）。ただし純利益の見通しは市場予想に届かず", "心配な点：円高、中国の不振、地震の影響"], "sources": [{"title": "nippon.com：通期見通しの引き上げ", "url": "https://www.nippon.com/en/news/yjj2026080400606/"}, {"title": "トヨタ発表：2026年4〜6月決算", "url": "https://pressroom.toyota.com/tmc-announces-april-through-june-2026-financial-results/"}]}, "6758.T": {"name": "ソニーグループ", "tone": "追い風", "summary": "4〜6月決算（7月31日発表）は、営業利益が約4,765億円（前年比+40%）と大きく伸び、通期の営業利益の見通しを1.72兆円（従来より約8%増）に引き上げました。発表後に株価は約11%上がったと報じられています。ゲーム、音楽、イメージセンサー（カメラ用の半導体）が好調で、自社株買いと増配（年35円の予想）も進めています。心配な点は、メモリ部品の値上がりや高級スマホの需要減、熊本地震による半導体工場への影響です。", "points": ["営業利益+40%、通期見通しを引き上げ", "プレイステーションの月間利用者は1.25億人で6月として過去最高", "心配な点：メモリの値上がり、地震の影響"], "sources": [{"title": "Investing.com：決算説明の要点", "url": "https://www.investing.com/news/transcripts/earnings-call-transcript-sony-beats-on-q1-2026-profit-and-lifts-fullyear-outlook-93CH-4826976"}, {"title": "Yahoo Finance：見通し引き上げ後の株価", "url": "https://finance.yahoo.com/markets/stocks/articles/why-sony-group-tse-6758-100720553.html"}]}, "9984.T": {"name": "ソフトバンクグループ", "tone": "中立", "summary": "8月の4〜6月決算で、保有資産の価値（NAV）は過去最高になりました。ただ、AIへの積極的な投資（OpenAIへの追加出資など）への警戒から、決算後は株価が約4%下がりました。OpenAIへの出資は、10月1日までに持ち株比率が約13%になる見込みです。OpenAIの上場観測や、傘下のArm（半導体設計）の株価に連動して値動きが非常に大きいのが特徴で、5月には1日で約20%上がった日もありました。9月18日はAI関連の上昇で約4%高でした。", "points": ["保有資産の価値は過去最高", "OpenAI・Armの動きに左右され、値動きが非常に大きい", "心配な点：AIへの投資が膨らみ続けること"], "sources": [{"title": "Investing.com：4〜6月決算の資料", "url": "https://www.investing.com/news/company-news/softbank-q1-fy2026-slides-record-nav-amid-massive-ai-bets-93CH-4840504"}, {"title": "CNBC：5月の急騰", "url": "https://www.cnbc.com/2026/05/22/softbank-extends-scorching-rally-surging-over-12percent-as-investors-crowd-into-ai-trade.html"}]}, "8035.T": {"name": "東京エレクトロン", "tone": "追い風", "summary": "7月30日の4〜6月決算は、売上が過去最高の約7,323億円（前年比+33%）でした。AIデータセンター向けの半導体製造装置の需要が強く、4〜9月の見通しを売上1.62兆円・営業利益4,580億円へ引き上げ、通期の売上は3兆円以上を見込みます。決算後の株価は約6%上がりました。会社は、世界の製造装置の市場が2026年に1,500億ドル以上、2027年に1,900億ドル以上になると見ています。9月18日には、同業のアドバンテストやレーザーテックが大きく上がりました。", "points": ["売上・粗利益とも過去最高", "AI向けの需要で、見通しを引き上げ", "心配な点：期待が高く、金利上昇や円高で売られやすい"], "sources": [{"title": "Investing.com：決算資料の要点", "url": "https://www.investing.com/news/company-news/tokyo-electron-q1-fy2027-slides-ai-boom-drives-record-sales-outlook-93CH-4827886"}, {"title": "BigGo Finance：決算説明会の要約", "url": "https://finance.biggo.com/news/JP_8035.T_2026-07-30"}]}, "6861.T": {"name": "キーエンス", "tone": "中立", "summary": "8月3日発表の4〜6月決算は、売上・純利益とも前年比+9%超で、海外の売上が+39%と大きく伸びました（円安の効果を含みます）。年間配当の予想も引き上げています。4月の通期決算後には株価が1日で約16%上がり（ストップ高）、自社株買いを可能にする定款の変更も提案しました。一方、高い収益力を織り込んで割高との見方があり、円高が進むと海外売上の円換算が減る点は向かい風です。", "points": ["売上・純利益とも+9%超、海外は+39%", "配当の引き上げと自社株買いの準備", "心配な点：割高感、円高"], "sources": [{"title": "Quartr：決算の要約", "url": "https://quartr.com/companies/keyence-corporation_11375"}, {"title": "Bloomberg：4月の決算後の急騰", "url": "https://www.bloomberg.com/news/articles/2026-04-27/keyence-surges-16-to-daily-limit-after-profit-beats-estimates"}]}}}}</script>
+<script>
+/* ---- pure: データ処理 ---- */
+const FACTORS = [
+  { key: "ret_3m",          label: "3か月の値上がり率",                     kind: "pct",   group: "up" },
+  { key: "ret_1m",          label: "1か月の値上がり率",                     kind: "pct",   group: "up" },
+  { key: "above_ma200",     label: "約10か月の平均株価との差",               kind: "pct",   group: "up" },
+  { key: "volume_ratio",    label: "最近の取引の活発さ（直近5日÷60日）",      kind: "ratio", group: "up" },
+  { key: "revenue_growth",  label: "売上の伸び",                            kind: "pct",   group: "up" },
+  { key: "earnings_growth", label: "利益の伸び",                            kind: "pct",   group: "up" },
+  { key: "pe_improve",      label: "増益の見込み（1より大きいと増益予想）",    kind: "ratio", group: "up" },
+  { key: "rsi14",           label: "買われすぎ度（70超は過熱ぎみ）",          kind: "plain", group: "risk" },
+  { key: "slowdown",        label: "上昇ペースの鈍り（プラスほど鈍っている）", kind: "pctn",  group: "risk" },
+  { key: "forward_pe",      label: "株価は今後の利益の何倍か（高いほど割高）", kind: "times", group: "risk" }
+];
+const MARKET_LABEL = { JP: "日本株", US: "米国株" };
+const MARKET_NAME = { JP: "日本市場", US: "米国市場" };
+const TONE_CLASS = { "追い風": "good", "中立": "mid", "逆風": "warn" };
+const DIR_CLASS = { "上向き": "good", "やや上向き": "good", "横ばい": "mid", "やや下向き": "warn", "下向き": "warn" };
+const TONE_VALUE = { "追い風": 1, "中立": 0, "逆風": -1 };
+const NEWS_MAX_AGE_DAYS = 10;
+
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/, "");
+  const rows = [];
+  let row = [], cur = "", q = false;
+  const pushRow = () => { row.push(cur); cur = ""; if (row.length > 1 || row[0] !== "") rows.push(row); row = []; };
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; pushRow(); }
+    else cur += c;
+  }
+  if (cur !== "" || row.length) pushRow();
+  return rows;
+}
+
+function toNum(v) {
+  if (v == null || String(v).trim() === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function recordsFromCSV(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error("データの行が見つかりません。");
+  const head = rows[0].map(s => s.trim());
+  const col = n => head.indexOf(n);
+  const iMarket = col("market"), iScore = col("score");
+  if (iMarket < 0 || iScore < 0) {
+    throw new Error("market列とscore列が見つかりません。stock_screener.py が出力した screener_result.csv を読み込んでください。");
+  }
+  const iTicker = col("ticker") >= 0 ? col("ticker") : 0;
+  const num = (r, n) => col(n) >= 0 ? toNum(r[col(n)]) : null;
+  const str = (r, n) => col(n) >= 0 ? ((r[col(n)] || "").trim() || null) : null;
+  const out = [];
+  for (const r of rows.slice(1)) {
+    const f = {};
+    for (const fac of FACTORS) f[fac.key] = num(r, fac.key);
+    out.push({
+      ticker: (r[iTicker] || "").trim(), market: (r[iMarket] || "").trim(), score: toNum(r[iScore]), f,
+      outlook: str(r, "outlook"), risk: num(r, "plateau_risk"), rising: num(r, "rising_score"),
+      price: num(r, "price"), rangeLow: num(r, "range_low"), rangeHigh: num(r, "range_high"),
+      wideLow: num(r, "wide_low"), wideHigh: num(r, "wide_high"),
+      direction: str(r, "direction"), newsTone: str(r, "news_tone"), marketTone: str(r, "market_tone")
+    });
+  }
+  const valid = out.filter(x => x.ticker && x.market);
+  if (!valid.length) throw new Error("銘柄のデータが読み取れませんでした。");
+  return valid;
+}
+
+/* 市場内・指標ごとに順位を付ける（pandasのrank(pct=True)と同じ平均順位） */
+function enrich(records) {
+  const byMarket = {};
+  for (const r of records) (byMarket[r.market] = byMarket[r.market] || []).push(r);
+  for (const list of Object.values(byMarket)) {
+    for (const fac of FACTORS) {
+      const vals = list.map(r => r.f[fac.key]).filter(v => v != null);
+      const n = vals.length;
+      for (const r of list) {
+        r.rank = r.rank || {};
+        const v = r.f[fac.key];
+        if (v == null) { r.rank[fac.key] = null; continue; }
+        const less = vals.filter(x => x < v).length;
+        const eq = vals.filter(x => x === v).length;
+        const greater = vals.filter(x => x > v).length;
+        r.rank[fac.key] = { pct: (less + (eq + 1) / 2) / n, pos: greater + 1, n };
+      }
+    }
+  }
+  return byMarket;
+}
+
+function fmtVal(kind, v) {
+  if (kind === "pct" || kind === "pctn") return (v > 0 ? "+" : "") + (v * 100).toFixed(1) + "%";
+  if (kind === "plain") return v.toFixed(0);
+  if (kind === "times") return v.toFixed(1) + "倍";
+  return v.toFixed(2) + "×";
+}
+function signClass(kind, v) {
+  if (kind !== "pct" && kind !== "ratio") return "";
+  const base = kind === "pct" ? 0 : 1;
+  return v > base ? "up" : v < base ? "down" : "";
+}
+function fmtPrice(market, v) {
+  if (v == null) return "–";
+  if (market === "JP") return Math.round(v).toLocaleString("ja-JP") + "円";
+  return "$" + v.toLocaleString("en-US", { maximumFractionDigits: v >= 100 ? 0 : 2, minimumFractionDigits: v >= 100 ? 0 : 2 });
+}
+
+/* 1か月後の見立て（プログラム本体と同じルール） */
+function directionPoints(score, outlook, newsTone, marketTone) {
+  const base = Math.max(-1, Math.min(1, (score - 50) / 25));
+  return base - (outlook === "頭打ち注意" ? 0.5 : 0)
+    + 0.75 * (TONE_VALUE[newsTone] || 0) + 0.5 * (TONE_VALUE[marketTone] || 0);
+}
+function directionLabel(p) {
+  return p >= 1 ? "上向き" : p >= 0.4 ? "やや上向き" : p > -0.4 ? "横ばい" : p > -1 ? "やや下向き" : "下向き";
+}
+
+/* サンプル用（架空データ）。スコアの計算はプログラム本体と同じ考え方 */
+const SAMPLE_WEIGHTS = { ret_3m: .25, ret_1m: .10, above_ma200: .10, volume_ratio: .10, revenue_growth: .20, earnings_growth: .20, pe_improve: .05 };
+const SAMPLE_RISK_WEIGHTS = { rsi14: .30, slowdown: .30, forward_pe: .25, volume_ratio: .15 };
+function sampleRecords() {
+  const keys = ["ret_1m", "ret_3m", "above_ma200", "volume_ratio", "revenue_growth", "earnings_growth", "pe_improve", "rsi14", "forward_pe", "price", "vol_1m"];
+  const raw = [
+    ["JP", "DEMO-J1", .020, .118, .15, 1.35, .12, .25, 1.18, 66, 24, 2400, .09],
+    ["JP", "DEMO-J2", -.015, .031, .04, .92, .05, .08, 1.04, 48, 15, 1800, .07],
+    ["JP", "DEMO-J3", .066, .204, .22, 1.61, .21, .40, 1.30, 78, 41, 5200, .13],
+    ["JP", "DEMO-J4", -.048, -.072, -.09, 1.10, -.02, -.15, .90, 32, 12, 950, .08],
+    ["JP", "DEMO-J5", .004, .055, .07, .85, .08, .10, 1.07, 55, 18, 3100, .06],
+    ["US", "DEMO-U1", .080, .190, .18, 1.40, .30, .55, 1.25, 74, 33, 145, .11],
+    ["US", "DEMO-U2", .010, .040, .06, .95, .09, .12, 1.06, 52, 20, 88.5, .07],
+    ["US", "DEMO-U3", -.020, -.030, -.01, 1.05, .04, .02, 1.00, 44, 17, 210, .06],
+    ["US", "DEMO-U4", .020, .110, .13, 1.22, .15, .20, 1.12, 63, 27, 62, .09],
+    ["US", "DEMO-U5", -.060, -.100, -.12, 1.30, -.05, -.20, .85, 28, 14, 330, .12]
+  ];
+  const recs = raw.map(([market, ticker, ...vals]) => {
+    const f = {}; keys.forEach((k, i) => f[k] = vals[i]);
+    f.slowdown = f.ret_3m / 3 - f.ret_1m;
+    return { ticker, market, score: null, f };
+  });
+  const byMarket = enrich(recs);
+  for (const list of Object.values(byMarket)) {
+    for (const r of list) {
+      let rising = 0, risk = 0;
+      for (const [k, w] of Object.entries(SAMPLE_WEIGHTS)) rising += w * (r.rank[k] ? r.rank[k].pct : 0.5);
+      for (const [k, w] of Object.entries(SAMPLE_RISK_WEIGHTS)) {
+        const rk = r.rank[k];
+        const pct = !rk ? 0.5 : k === "volume_ratio" ? (rk.n + 1) / rk.n - rk.pct : rk.pct;  // 取引量は少ないほどリスク
+        risk += w * pct;
+      }
+      r.rising = Math.round(rising * 1000) / 10;
+      r.risk = Math.round(risk * 1000) / 10;
+      r.outlook = !(r.f.ret_3m > 0 && r.f.above_ma200 > 0) ? "上昇していない"
+        : r.risk >= 67 ? "頭打ち注意" : r.risk <= 33 ? "上昇継続の可能性" : "様子見";
+      r.score = Math.round((0.75 * r.rising + 0.25 * (100 - r.risk)) * 10) / 10;
+      r.direction = directionLabel(directionPoints(r.score, r.outlook, null, null));
+      r.price = r.f.price;
+      r.rangeLow = r.price * Math.exp(-r.f.vol_1m); r.rangeHigh = r.price * Math.exp(r.f.vol_1m);
+      r.wideLow = r.price * Math.exp(-1.96 * r.f.vol_1m); r.wideHigh = r.price * Math.exp(1.96 * r.f.vol_1m);
+    }
+  }
+  return recs;
+}
+
+/* ---- ui ---- */
+const STORE_KEY = "screener:v1";
+const NEWS_KEY = "screener:news:v1";
+const state = { records: [], byMarket: {}, market: null, open: null, source: "sample", updatedAt: null, news: null };
+let dbRef = null;
+
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, "");
+    else if (v !== false && v != null) el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid);
+  return el;
+}
+const $ = id => document.getElementById(id);
+
+function safeUrl(u) {
+  try { const p = new URL(u); return (p.protocol === "https:" || p.protocol === "http:") ? p.href : null; } catch (e) { return null; }
+}
+function marketOf(t) { return /\.T$/.test(t) ? "JP" : "US"; }
+function newsOf(t) { return state.news && state.news.tickers ? state.news.tickers[t] || null : null; }
+function nameOf(t) { const n = newsOf(t); return n && n.name ? n.name : null; }
+function newsAgeDays() {
+  if (!state.news || !state.news.asOf) return null;
+  const t = Date.parse(state.news.asOf + "T00:00:00");
+  return Number.isFinite(t) ? Math.floor((Date.now() - t) / 86400000) : null;
+}
+function fmtMD(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return Number.isFinite(d.getTime()) ? (d.getMonth() + 1) + "/" + d.getDate() : iso;
+}
+
+function setRecords(records, source, updatedAt) {
+  state.records = records;
+  state.byMarket = enrich(records);
+  state.source = source;
+  state.updatedAt = updatedAt || null;
+  const markets = Object.keys(state.byMarket);
+  if (state.market !== "news" && !markets.includes(state.market)) state.market = markets.includes("JP") ? "JP" : markets[0];
+  state.open = null;
+  render();
+}
+function validNews(o) { return !!(o && typeof o === "object" && o.tickers && typeof o.tickers === "object"); }
+function setNews(n) { state.news = n; render(); }
+
+function sourceLinks(list) {
+  const links = (list || []).map(s => ({ t: s && s.title, u: s && safeUrl(s.url) })).filter(x => x.u);
+  if (!links.length) return null;
+  return h("p", { class: "src" }, "出典：", links.map(x => h("a", { href: x.u, target: "_blank", rel: "noopener noreferrer", text: x.t || x.u })));
+}
+
+function marketBox(m) {
+  const mk = state.news && state.news.market ? state.news.market[m] : null;
+  if (!mk) return null;
+  return h("div", { class: "mbox" },
+    h("div", { class: "mbox-top" },
+      h("span", { class: "mbox-title", text: (MARKET_NAME[m] || m) + "の状況" }),
+      h("span", { class: "chip " + (TONE_CLASS[mk.tone] || "mid"), text: mk.tone || "中立" })),
+    h("p", { text: mk.summary || "" }),
+    mk.points && mk.points.length ? h("ul", { class: "pts" }, mk.points.map(p => h("li", { text: p }))) : null,
+    sourceLinks(mk.sources),
+    state.news.asOf ? h("p", { class: "asof", text: fmtMD(state.news.asOf) + "時点のニュースから（株価に「追い風・中立・逆風」のどれかを示しています）" }) : null);
+}
+
+function render() {
+  const isSample = state.source === "sample";
+  $("demo").hidden = !isSample;
+  const parts = [];
+  parts.push(isSample ? "実データはまだ読み込まれていません"
+    : "更新 " + new Date(state.updatedAt).toLocaleString("ja-JP", { dateStyle: "medium", timeStyle: "short" }));
+  if (state.news && state.news.asOf) parts.push("ニュース " + fmtMD(state.news.asOf) + "時点");
+  $("status").textContent = parts.join("　／　");
+
+  const tabs = $("tabs");
+  const tabEls = Object.keys(state.byMarket).map(m => h("button", {
+    class: "tab", role: "tab", id: "tab-" + m, "aria-selected": String(m === state.market),
+    onclick: () => { state.market = m; state.open = null; render(); }
+  }, MARKET_LABEL[m] || m, h("span", { class: "n", text: String(state.byMarket[m].length) })));
+  if (state.news) tabEls.push(h("button", {
+    class: "tab", role: "tab", id: "tab-news", "aria-selected": String(state.market === "news"),
+    onclick: () => { state.market = "news"; state.open = null; render(); }
+  }, "ニュース"));
+  tabs.replaceChildren(...tabEls);
+
+  if (state.market === "news" && state.news) {
+    $("mbox").replaceChildren();
+    $("list").hidden = true;
+    $("newsView").hidden = false;
+    renderNews();
+    return;
+  }
+  if (state.market === "news") state.market = Object.keys(state.byMarket)[0];
+  $("list").hidden = false;
+  $("newsView").hidden = true;
+  const box = marketBox(state.market);
+  $("mbox").replaceChildren(...(box ? [box] : []));
+  const list = (state.byMarket[state.market] || []).slice()
+    .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
+  $("list").replaceChildren(...list.map((r, i) => item(r, i + 1)));
+}
+
+function renderNews() {
+  const view = $("newsView");
+  const els = [];
+  const age = newsAgeDays();
+  if (age != null && age > NEWS_MAX_AGE_DAYS) {
+    els.push(h("p", { class: "stale", text: "このニュースは" + age + "日前のものです。古い情報のため、見立てには反映されません。Claudeに「ニュースを更新して」と頼むと新しくなります。" }));
+  }
+  const byM = {};
+  for (const t of Object.keys(state.news.tickers)) (byM[marketOf(t)] = byM[marketOf(t)] || []).push(t);
+  for (const m of ["JP", "US"]) {
+    if (!byM[m] && !(state.news.market && state.news.market[m])) continue;
+    els.push(h("p", { class: "news-head", text: MARKET_LABEL[m] }));
+    const box = marketBox(m); if (box) els.push(box);
+    for (const t of byM[m] || []) els.push(newsCard(t));
+  }
+  els.push(h("p", { class: "note", text: state.news.note || "" }));
+  view.replaceChildren(...els);
+}
+
+function newsCard(t) {
+  const n = newsOf(t);
+  return h("article", { class: "ncard" },
+    h("div", { class: "ncard-top" },
+      h("span", { class: "name", text: n.name || t }),
+      h("span", { class: "code", text: t }),
+      n.tone ? h("span", { class: "chip " + (TONE_CLASS[n.tone] || "mid"), text: n.tone }) : null),
+    h("p", { class: "ntext", text: n.summary || "" }),
+    n.points && n.points.length ? h("ul", { class: "pts" }, n.points.map(p => h("li", { text: p }))) : null,
+    sourceLinks(n.sources));
+}
+
+function item(r, place) {
+  const isOpen = state.open === r.ticker;
+  const three = r.f.ret_3m;
+  const nm = nameOf(r.ticker);
+  const sub = h("span", null,
+    three == null ? "3か月の値上がり率 データなし" : ["3か月 ", h("span", { class: signClass("pct", three), text: fmtVal("pct", three) })],
+    r.direction ? h("span", { class: "dir", text: "1か月の見立て " + r.direction }) : null);
+  const chip = r.outlook ? h("span", { class: "chip " + (r.outlook === "頭打ち注意" ? "warn" : r.outlook === "上昇継続の可能性" ? "good" : "mid"), text: r.outlook }) : null;
+  const row = h("button", {
+    class: "row", type: "button", "aria-expanded": String(isOpen),
+    onclick: () => { state.open = isOpen ? null : r.ticker; render(); }
+  },
+    h("span", { class: "rank" + (place <= 3 ? " top" : ""), text: String(place) }),
+    h("span", null,
+      h("span", { class: "name", text: nm || r.ticker }), nm ? h("span", { class: "code", text: r.ticker }) : null, chip, h("br"),
+      h("span", { class: "sub" }, sub),
+      h("span", { class: "track" }, h("span", { class: "fill", style: "width:" + Math.max(0, Math.min(100, r.score ?? 0)) + "%" }))
+    ),
+    h("span", { class: "score", text: r.score == null ? "–" : r.score.toFixed(1) })
+  );
+  const li = h("li", { class: "item" }, row);
+  if (isOpen) li.append(detail(r));
+  return li;
+}
+
+function factorRow(r, fac) {
+  const v = r.f[fac.key], rk = r.rank[fac.key];
+  if (v == null || !rk) {
+    return h("div", { class: "f" },
+      h("div", { class: "f-top" }, h("span", { class: "f-name", text: fac.label }), h("span", { class: "f-val", text: "–" })),
+      h("div", { class: "na", text: "データなし（真ん中として計算）" }));
+  }
+  const pos = fac.group === "risk" ? "高い方から" + rk.pos + "/" + rk.n + "番目" : rk.pos + "/" + rk.n + "位";
+  return h("div", { class: "f" },
+    h("div", { class: "f-top" },
+      h("span", { class: "f-name", text: fac.label }),
+      h("span", { class: "f-val " + signClass(fac.kind, v), text: fmtVal(fac.kind, v) })),
+    h("div", { class: "f-rank" },
+      h("span", { class: "track" }, h("span", { class: "fill", style: "width:" + Math.round(rk.pct * 100) + "%" })),
+      h("span", { class: "pos", text: pos })));
+}
+
+function stat(label, v) {
+  return h("div", null,
+    h("span", { class: "stat-l", text: label }),
+    h("span", { class: "stat-v" }, v == null ? "–" : v.toFixed(0), h("small", { text: " /100" })));
+}
+
+function forecastBlock(r) {
+  if (!r.direction && r.price == null) return null;
+  const els = [h("p", { class: "gh", text: "1か月後の見立てと株価の目安" })];
+  if (r.direction) {
+    const mats = ["勢い・割高感の点数"];
+    if (r.outlook === "頭打ち注意") mats.push("頭打ちの兆し（マイナス）");
+    if (r.newsTone) mats.push("この会社のニュース：" + r.newsTone);
+    if (r.marketTone) mats.push("市場全体：" + r.marketTone);
+    const why = (r.newsTone || r.marketTone) ? "見立ての材料：" + mats.join("、") : "見立ての材料：勢い・割高感の点数（ニュースは反映していません）";
+    els.push(h("div", { class: "fc-dir" },
+      h("span", { class: "chip big " + (DIR_CLASS[r.direction] || "mid"), text: r.direction }),
+      h("span", { class: "fc-why", text: why })));
+  }
+  if (r.price != null && r.rangeLow != null && r.rangeHigh != null) {
+    const rng = (lo, hi) => fmtPrice(r.market, lo) + " 〜 " + fmtPrice(r.market, hi);
+    els.push(h("div", { class: "fc-row" }, h("span", { class: "fc-l", text: "今の株価" }), h("span", { class: "fc-v", text: fmtPrice(r.market, r.price) })));
+    els.push(h("div", { class: "fc-row" }, h("span", { class: "fc-l", text: "よくある範囲（約7割）" }), h("span", { class: "fc-v", text: rng(r.rangeLow, r.rangeHigh) })));
+    if (r.wideLow != null && r.wideHigh != null)
+      els.push(h("div", { class: "fc-row" }, h("span", { class: "fc-l", text: "大きくぶれた場合（約95%）" }), h("span", { class: "fc-v", text: rng(r.wideLow, r.wideHigh) })));
+    els.push(h("p", { class: "fc-note", text: "範囲は、過去1年の値動きの大きさが今後も続くと仮定した目安です。上がる・下がると決めつけるものではなく、範囲の外に出ることもあります。" }));
+  }
+  return els;
+}
+
+function detail(r) {
+  const parts = [];
+  if (r.rising != null || r.risk != null) parts.push(h("div", { class: "sum" }, stat("上昇の勢い", r.rising), stat("頭打ちリスク", r.risk)));
+  const fc = forecastBlock(r); if (fc) parts.push(...fc);
+  const n = newsOf(r.ticker);
+  if (n) {
+    parts.push(h("p", { class: "gh", text: "最近のニュース" + (state.news.asOf ? "（" + fmtMD(state.news.asOf) + "時点）" : "") }));
+    parts.push(h("div", null,
+      n.tone ? h("span", { class: "chip big " + (TONE_CLASS[n.tone] || "mid"), text: "株価への影響：" + n.tone }) : null,
+      h("p", { class: "ntext", text: n.summary || "" }),
+      n.points && n.points.length ? h("ul", { class: "pts" }, n.points.map(p => h("li", { text: p }))) : null,
+      sourceLinks(n.sources)));
+  }
+  parts.push(h("p", { class: "gh", text: "上昇の勢いと業績" }));
+  FACTORS.filter(f => f.group === "up").forEach(f => parts.push(factorRow(r, f)));
+  const riskFactors = FACTORS.filter(f => f.group === "risk");
+  if (r.risk != null || riskFactors.some(f => r.f[f.key] != null)) {
+    parts.push(h("p", { class: "gh", text: "頭打ちの兆し（値が高いほど頭打ちしやすい）" }));
+    riskFactors.forEach(f => parts.push(factorRow(r, f)));
+  }
+  return h("div", { class: "detail" }, parts);
+}
+
+function say(text, isErr) {
+  const m = $("msg");
+  m.textContent = text;
+  m.className = "msg" + (isErr ? " err" : "");
+}
+
+async function applyCSV(text) {
+  let records;
+  try { records = recordsFromCSV(text); }
+  catch (e) { say(e.message, true); return false; }
+  const updatedAt = new Date().toISOString();
+  setRecords(records, "csv", updatedAt);
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ csv: text, updatedAt })); } catch (e) {}
+  let synced = false;
+  if (dbRef) {
+    try { await dbRef.doc("screener/latest").set({ csv: text, updatedAt }); synced = true; } catch (e) {}
+  }
+  say(records.length + "銘柄を読み込みました。" + (synced ? "他の端末でも同じ内容が表示されます。" : "この端末に保存しました。"));
+  if (validNews(state.news)) $("dataBox").open = false;
+  return true;
+}
+
+async function applyNewsText(text) {
+  let obj;
+  try { obj = JSON.parse(text); } catch (e) { say("ニュースのファイルを読み取れませんでした。", true); return false; }
+  if (!validNews(obj)) { say("ニュースの形式が違うようです。news_view.json を読み込んでください。", true); return false; }
+  setNews(obj);
+  try { localStorage.setItem(NEWS_KEY, JSON.stringify(obj)); } catch (e) {}
+  let synced = false;
+  if (dbRef) { try { await dbRef.doc("screener/news").set(obj); synced = true; } catch (e) {} }
+  say(Object.keys(obj.tickers).length + "銘柄分のニュースを読み込みました。" + (synced ? "他の端末でも同じ内容が表示されます。" : "この端末に保存しました。"));
+  return true;
+}
+
+function applyAny(text) { return /^\s*\{/.test(text) ? applyNewsText(text) : applyCSV(text); }
+
+$("file").addEventListener("change", async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  try { await applyAny(await file.text()); }
+  catch (e) { say("ファイルを読み込めませんでした。", true); }
+  ev.target.value = "";
+});
+$("loadPaste").addEventListener("click", () => {
+  const t = $("paste").value.trim();
+  if (!t) { say("中身を貼り付けてください。", true); return; }
+  applyAny(t).then(ok => { if (ok) $("paste").value = ""; });
+});
+$("reset").addEventListener("click", async () => {
+  try { localStorage.removeItem(STORE_KEY); localStorage.removeItem(NEWS_KEY); } catch (e) {}
+  if (dbRef) {
+    try { await dbRef.doc("screener/latest").delete(); } catch (e) {}
+    try { await dbRef.doc("screener/news").delete(); } catch (e) {}
+  }
+  state.news = null;
+  state.market = "JP";
+  setRecords(sampleRecords(), "sample", null);
+  say("保存データを消しました。サンプル表示に戻しています。");
+});
+
+/* 起動: まずサンプル。自動更新ページなら埋め込みデータ、そうでなければ保存データを使う */
+setRecords(sampleRecords(), "sample", null);
+
+function readEmbedded() {
+  const el = document.getElementById("embedded");
+  if (!el) return null;
+  try { const d = JSON.parse(el.textContent); return d && d.csv ? d : null; } catch (e) { return null; }
+}
+function loadLocal() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if (saved && saved.csv) setRecords(recordsFromCSV(saved.csv), "csv", saved.updatedAt);
+  } catch (e) {}
+  try {
+    const news = JSON.parse(localStorage.getItem(NEWS_KEY) || "null");
+    if (validNews(news)) setNews(news);
+  } catch (e) {}
+}
+async function loadShared() {
+  try {
+    if (!(window.claude && window.claude.use)) return;
+    dbRef = await window.claude.use("db");
+  } catch (e) { return; }
+  if (!dbRef) return;
+  try {
+    const snap = await dbRef.doc("screener/latest").get();
+    const d = snap.exists ? snap.data() : null;
+    if (d && d.csv && (state.source === "sample" || !state.updatedAt || d.updatedAt > state.updatedAt)) {
+      setRecords(recordsFromCSV(d.csv), "csv", d.updatedAt);
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ csv: d.csv, updatedAt: d.updatedAt })); } catch (e) {}
+    }
+  } catch (e) {}
+  try {
+    const snap = await dbRef.doc("screener/news").get();
+    const d = snap.exists ? snap.data() : null;
+    if (validNews(d) && (!state.news || String(d.asOf) > String(state.news.asOf))) {
+      setNews(d);
+      try { localStorage.setItem(NEWS_KEY, JSON.stringify(d)); } catch (e) {}
+    }
+  } catch (e) {}
+  if (state.source === "csv" && state.news) $("dataBox").open = false;
+}
+
+const embedded = readEmbedded();
+if (embedded) {
+  try {
+    if (validNews(embedded.news)) state.news = embedded.news;
+    setRecords(recordsFromCSV(embedded.csv), "csv", embedded.updatedAt);
+    $("dataBox").hidden = true;   // 自動更新ページでは手動の読み込み欄は不要
+  } catch (e) { loadLocal(); loadShared(); }
+} else {
+  loadLocal();
+  loadShared();
+}
+</script>
+</body>
+</html>
