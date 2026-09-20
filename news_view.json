@@ -1,0 +1,248 @@
+{
+  "asOf": "2026-09-20",
+  "note": "ウェブ上の報道をもとにClaudeが要約したものです。間違いを含む可能性があるため、大事な判断の前は元の記事も確認してください。",
+  "market": {
+    "US": {
+      "tone": "逆風",
+      "summary": "9月16日、米国の中央銀行（FRB）が3年ぶりに利上げ（0.25%）を決め、政策金利は3.75〜4.00%になりました。年内にもう1回の利上げが見込まれています。長期金利（米国10年債）は5%台、原油は1バレル100ドル超と高く、株価の重しになっています。決定日はダウ平均が約1.2%、S&P500が約0.45%下がりました。AI関連の強い決算が支えになる一方、金利が上がると割高な株は売られやすい状況です。",
+      "points": [
+        "FRB幹部の予測では、年内にもう1回の利上げがあり、2027年の利下げは見込まれていません",
+        "過去の例では、最初の利上げ直後は株が弱くても、1年後には上がっていた場合が多いという指摘もあります（利上げ幅が大きい場合は例外）"
+      ],
+      "sources": [
+        {
+          "title": "CNBC：9月の米国株の動き（ライブ更新）",
+          "url": "https://www.cnbc.com/2026/09/15/stock-market-today-live-updates.html"
+        },
+        {
+          "title": "Yahoo Finance：9月16日の米国株とFRBの決定",
+          "url": "https://finance.yahoo.com/markets/live/stock-market-today-wednesday-september-16-dow-sp-500-nasdaq-fed-meeting-decision-080356525.html"
+        },
+        {
+          "title": "Motley Fool：利上げの後、株はどうなってきたか",
+          "url": "https://www.fool.com/investing/2026/09/19/fed-chair-kevin-warsh-fomc-hiked-interest-rates-36-years-history-make-clear-what-next-for-stocks/"
+        }
+      ]
+    },
+    "JP": {
+      "tone": "中立",
+      "summary": "日銀は9月18日に政策金利を0.25%引き上げて1.25%にしました（市場の予想どおり）。同じ日の日経平均は前日比約1.5%高の6万5,100円前後で、AI・半導体関連が上昇を引っ張りました。ただ、9月上旬には円高（1ドル155円台）が進み、輸出企業の利益が減るとの見方から下がる場面がありました。日経平均は6月25日の高値（約7万2,400円）を1割ほど下回っています。長期の国債の利回りも高く、金利の上昇が続くかが焦点です。",
+      "points": [
+        "円高は、トヨタやキーエンスなど海外で稼ぐ企業には向かい風です",
+        "AI・半導体関連（東京エレクトロン、アドバンテストなど）は買われやすい状況です"
+      ],
+      "sources": [
+        {
+          "title": "Trading Economics：日経平均の日々の動き",
+          "url": "https://tradingeconomics.com/japan/stock-market"
+        },
+        {
+          "title": "FXEmpire：日経平均と円相場の分析",
+          "url": "https://www.fxempire.com/forecasts/article/premium-nikkei-225-analysis-is-the-yen-still-driving-tokyo-as-intervention-risk-looms-1622313"
+        },
+        {
+          "title": "note：日本市場レポート（9月3日）",
+          "url": "https://note.com/hirokimiyano/n/ned80664c001c?hl=en"
+        }
+      ]
+    }
+  },
+  "tickers": {
+    "AAPL": {
+      "name": "アップル",
+      "tone": "中立",
+      "summary": "7月30日の4〜6月決算は、売上が約1,094億ドル（前年比+16%）で市場予想を上回りました。9月1日にジョン・ターナス氏が新CEOに就任し、9月9日には初の折りたたみ型iPhone（報道では約2,199ドルから）と新型のiPhone 18 Proが発表される予定でした。一方、AI向け需要でメモリ部品が値上がりしており、価格の高さや利益率への影響が心配されています。株価は予想利益の約35倍と割高で、新製品の発表後は「材料出尽くし」で売られることもあります。",
+      "points": [
+        "4〜6月決算は売上+16%で予想を上回る",
+        "新CEOのもと、折りたたみ型など大きな新製品を投入（発表後の株価の反応は今回は確認できていません）",
+        "心配な点：部品の値上がり、高い価格、割高な株価"
+      ],
+      "sources": [
+        {
+          "title": "Barchart：決算と9月の新製品発表の見どころ",
+          "url": "https://www.barchart.com/story/news/3892461/why-investors-should-consider-buying-apple-stock-ahead-of-its-september-iphone-event"
+        },
+        {
+          "title": "Euronews：折りたたみ型iPhoneの発表予定",
+          "url": "https://www.euronews.com/2026/08/27/apple-to-unveil-foldable-iphone-ultra-on-9-september"
+        }
+      ]
+    },
+    "MSFT": {
+      "name": "マイクロソフト",
+      "tone": "中立",
+      "summary": "クラウド事業（Azure）は前年比+40%と高い伸びが続き、AI関連の契約も大きく積み上がっています。一方、AI向けの設備投資が非常に大きく（年間で約1,900億ドル規模と報じられています）、利益への負担が心配されて、株価は今年に入って約2割下がり、主要な大手IT企業の中で最も出遅れています。OpenAI株（約27%）の価値にも注目が集まり、OpenAIが上場すれば追い風になるとの見方もあります。",
+      "points": [
+        "Azure（クラウド）は+40%の成長",
+        "株価は年初から約2割の下落で、大手ITの中で最も出遅れ",
+        "OpenAIが2027年にも上場する可能性が報じられている"
+      ],
+      "sources": [
+        {
+          "title": "Motley Fool（Longport経由）：OpenAI上場とマイクロソフト",
+          "url": "https://longportapp.cn/news/291708797"
+        }
+      ]
+    },
+    "NVDA": {
+      "name": "エヌビディア",
+      "tone": "追い風",
+      "summary": "8月26日の決算は、売上が約962億ドルで市場予想（約919億ドル）を上回り、次の四半期は約1,080億ドルを見込むと発表しました。来期の売上は約70%増える見通しで、市場予想（約44%増）を大きく上回っています。決算の翌日に株価は約9%上がりました。それでも年初からの上昇は約16%にとどまり、半導体株の指数（約62%上昇）には見劣りしています。",
+      "points": [
+        "決算も見通しも市場予想を上回った",
+        "大手クラウド各社のAI向け設備投資が、来年さらに増える見通し",
+        "心配な点：米国の金利上昇、AI投資が続くかどうか"
+      ],
+      "sources": [
+        {
+          "title": "TechSpot：決算の速報",
+          "url": "https://techspot.com/news/113642-nvidia-posts-record-quarter-predicts-ai-driven-growth.html"
+        },
+        {
+          "title": "Nasdaq（Motley Fool）：9月末の株価予想",
+          "url": "https://www.nasdaq.com/articles/prediction-where-nvidia-stock-will-be-when-september-ends"
+        }
+      ]
+    },
+    "GOOGL": {
+      "name": "アルファベット（グーグル）",
+      "tone": "中立",
+      "summary": "4〜6月決算では、クラウドの売上が前年比+82%（約248億ドル）と急拡大し、受注残も過去最高でした。一方、年間の設備投資の見通しを1,950〜2,050億ドルへ引き上げたため、決算直後は株価が下がり、その後は持ち直しています。次世代AI「Gemini 3.5 Pro」の公開が6月から遅れているとの報道もあります。ロイターによると、約850億ドルの株式発行も計画しています。",
+      "points": [
+        "クラウドが+82%と急成長、受注残は過去最高",
+        "設備投資が大きく膨らむことへの警戒",
+        "AIの新モデルの公開が遅れている"
+      ],
+      "sources": [
+        {
+          "title": "決算の分析（FN2）：クラウド+82%、設備投資の引き上げ",
+          "url": "https://fn2.ai/earnings/goog/2026-q2"
+        },
+        {
+          "title": "ロイター（The Star経由）：Geminiの遅れと投資への不安",
+          "url": "https://www.thestar.com.my/tech/tech-news/2026/07/21/alphabet039s-gemini-delay-spending-worries-loom-over-earnings"
+        }
+      ]
+    },
+    "AMZN": {
+      "name": "アマゾン",
+      "tone": "追い風",
+      "summary": "7月30日の4〜6月決算は、売上が2,006億ドル（前年比+20%）で初めて2,000億ドルを超えました。クラウド（AWS）は+37%と18四半期ぶりの高い伸びで、翌日の株価は約15%上がりました。設備投資の見通しは約2,200億ドルに引き上げましたが、AWSの受注残（約4,960億ドル）が支えとなり、市場は好感しました。純利益にはAnthropic株の評価益（約534億ドル）が含まれるため、本業の実力とは分けて見る必要があります。7〜9月の売上見通しは市場予想をやや下回りました。",
+      "points": [
+        "AWSが+37%で、成長が5四半期連続で加速",
+        "売上・営業利益とも市場予想を上回った",
+        "7〜9月の見通しはやや弱め（プライムデーの時期のずれが主な理由との見方）"
+      ],
+      "sources": [
+        {
+          "title": "Amazon発表：4〜6月決算",
+          "url": "https://www.emr-online.com/?p=14042"
+        },
+        {
+          "title": "Benzinga（Webull経由）：AWSの急成長を評価",
+          "url": "https://www.webull.ca/news-detail/15321400666973184"
+        }
+      ]
+    },
+    "7203.T": {
+      "name": "トヨタ自動車",
+      "tone": "中立",
+      "summary": "8月4日の4〜6月決算は、円安（約160円/ドル）が追い風となり、純利益が約1.48兆円（前年比+75.6%）と大きく増えました。ただ、本業の営業利益は前年比-8.8%の約1.06兆円です。通期の見通し（営業利益3.4兆円、純利益3.25兆円）を引き上げ、最大1兆円の自社株買いも発表しましたが、純利益の見通しは市場予想（約3.63兆円）に届きませんでした。中国での販売不振、EVの目標引き下げ、7月の熊本地震による生産への影響も課題です。9月に入って円高（155円台）が進んだことは、会社が前提にした160円と比べて向かい風です。",
+      "points": [
+        "純利益は円安で急増したが、営業利益は減少",
+        "通期見通しの引き上げと、自社株買い（最大1兆円）。ただし純利益の見通しは市場予想に届かず",
+        "心配な点：円高、中国の不振、地震の影響"
+      ],
+      "sources": [
+        {
+          "title": "nippon.com：通期見通しの引き上げ",
+          "url": "https://www.nippon.com/en/news/yjj2026080400606/"
+        },
+        {
+          "title": "トヨタ発表：2026年4〜6月決算",
+          "url": "https://pressroom.toyota.com/tmc-announces-april-through-june-2026-financial-results/"
+        }
+      ]
+    },
+    "6758.T": {
+      "name": "ソニーグループ",
+      "tone": "追い風",
+      "summary": "4〜6月決算（7月31日発表）は、営業利益が約4,765億円（前年比+40%）と大きく伸び、通期の営業利益の見通しを1.72兆円（従来より約8%増）に引き上げました。発表後に株価は約11%上がったと報じられています。ゲーム、音楽、イメージセンサー（カメラ用の半導体）が好調で、自社株買いと増配（年35円の予想）も進めています。心配な点は、メモリ部品の値上がりや高級スマホの需要減、熊本地震による半導体工場への影響です。",
+      "points": [
+        "営業利益+40%、通期見通しを引き上げ",
+        "プレイステーションの月間利用者は1.25億人で6月として過去最高",
+        "心配な点：メモリの値上がり、地震の影響"
+      ],
+      "sources": [
+        {
+          "title": "Investing.com：決算説明の要点",
+          "url": "https://www.investing.com/news/transcripts/earnings-call-transcript-sony-beats-on-q1-2026-profit-and-lifts-fullyear-outlook-93CH-4826976"
+        },
+        {
+          "title": "Yahoo Finance：見通し引き上げ後の株価",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/why-sony-group-tse-6758-100720553.html"
+        }
+      ]
+    },
+    "9984.T": {
+      "name": "ソフトバンクグループ",
+      "tone": "中立",
+      "summary": "8月の4〜6月決算で、保有資産の価値（NAV）は過去最高になりました。ただ、AIへの積極的な投資（OpenAIへの追加出資など）への警戒から、決算後は株価が約4%下がりました。OpenAIへの出資は、10月1日までに持ち株比率が約13%になる見込みです。OpenAIの上場観測や、傘下のArm（半導体設計）の株価に連動して値動きが非常に大きいのが特徴で、5月には1日で約20%上がった日もありました。9月18日はAI関連の上昇で約4%高でした。",
+      "points": [
+        "保有資産の価値は過去最高",
+        "OpenAI・Armの動きに左右され、値動きが非常に大きい",
+        "心配な点：AIへの投資が膨らみ続けること"
+      ],
+      "sources": [
+        {
+          "title": "Investing.com：4〜6月決算の資料",
+          "url": "https://www.investing.com/news/company-news/softbank-q1-fy2026-slides-record-nav-amid-massive-ai-bets-93CH-4840504"
+        },
+        {
+          "title": "CNBC：5月の急騰",
+          "url": "https://www.cnbc.com/2026/05/22/softbank-extends-scorching-rally-surging-over-12percent-as-investors-crowd-into-ai-trade.html"
+        }
+      ]
+    },
+    "8035.T": {
+      "name": "東京エレクトロン",
+      "tone": "追い風",
+      "summary": "7月30日の4〜6月決算は、売上が過去最高の約7,323億円（前年比+33%）でした。AIデータセンター向けの半導体製造装置の需要が強く、4〜9月の見通しを売上1.62兆円・営業利益4,580億円へ引き上げ、通期の売上は3兆円以上を見込みます。決算後の株価は約6%上がりました。会社は、世界の製造装置の市場が2026年に1,500億ドル以上、2027年に1,900億ドル以上になると見ています。9月18日には、同業のアドバンテストやレーザーテックが大きく上がりました。",
+      "points": [
+        "売上・粗利益とも過去最高",
+        "AI向けの需要で、見通しを引き上げ",
+        "心配な点：期待が高く、金利上昇や円高で売られやすい"
+      ],
+      "sources": [
+        {
+          "title": "Investing.com：決算資料の要点",
+          "url": "https://www.investing.com/news/company-news/tokyo-electron-q1-fy2027-slides-ai-boom-drives-record-sales-outlook-93CH-4827886"
+        },
+        {
+          "title": "BigGo Finance：決算説明会の要約",
+          "url": "https://finance.biggo.com/news/JP_8035.T_2026-07-30"
+        }
+      ]
+    },
+    "6861.T": {
+      "name": "キーエンス",
+      "tone": "中立",
+      "summary": "8月3日発表の4〜6月決算は、売上・純利益とも前年比+9%超で、海外の売上が+39%と大きく伸びました（円安の効果を含みます）。年間配当の予想も引き上げています。4月の通期決算後には株価が1日で約16%上がり（ストップ高）、自社株買いを可能にする定款の変更も提案しました。一方、高い収益力を織り込んで割高との見方があり、円高が進むと海外売上の円換算が減る点は向かい風です。",
+      "points": [
+        "売上・純利益とも+9%超、海外は+39%",
+        "配当の引き上げと自社株買いの準備",
+        "心配な点：割高感、円高"
+      ],
+      "sources": [
+        {
+          "title": "Quartr：決算の要約",
+          "url": "https://quartr.com/companies/keyence-corporation_11375"
+        },
+        {
+          "title": "Bloomberg：4月の決算後の急騰",
+          "url": "https://www.bloomberg.com/news/articles/2026-04-27/keyence-surges-16-to-daily-limit-after-profit-beats-estimates"
+        }
+      ]
+    }
+  }
+}
